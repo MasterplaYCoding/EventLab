@@ -16,6 +16,7 @@
     "typecheck": "tsc --build --force",
     "test": "vitest run",
     "test:watch": "vitest",
+    "verify:packaged": "node scripts/verify-packaged-install.mjs",
     "docs": "typedoc"
   },
   "devDependencies": {

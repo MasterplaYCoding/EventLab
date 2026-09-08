@@ -73,7 +73,7 @@ expect(report.passed).toBe(false);
 
 ```
 ✗ each order is fulfilled exactly once
-  expected 2 fulfilments, found 3
+  expected 2 fulfilments, found 4
 
   6 deliveries, all 200 OK
   seed 20260908 · planner 1 · fixtures sha256:8f2b…
