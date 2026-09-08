@@ -6,10 +6,10 @@ If a webhook arrives twice, out of order, or at the same time as its twin, does
 your application still end up in the right state? EventLab turns that question
 into a test you can run in the runner you already have.
 
-> **Status: pre-release, working toward `0.1.0`.** Everything documented below
-> is implemented and tested in CI — including the console block further down,
-> which is compared against the library's own output on every run. Not yet on
-> npm; see [Install](#install). Anything not documented below is not built; see
+> Everything documented below is implemented and tested on Linux, Windows and
+> macOS — including the console block further down, which is compared against
+> the library's own output on every CI run. Install it from source today; see
+> [Install](#install). Anything not documented below is not built; see
 > [Roadmap](#roadmap).
 
 ---
@@ -117,15 +117,7 @@ demonstrated without hoping.
 
 ## Install
 
-> **Not published to npm yet.** The command below works from `0.1.0`; until
-> then, use the source install underneath it.
-
-```bash
-npm install --save-dev @masterplaycoding/eventlab
-```
-
-<details>
-<summary>Installing from source today</summary>
+Build it once, then depend on it from anywhere:
 
 ```bash
 git clone https://github.com/MasterplaYCoding/EventLab.git
@@ -138,16 +130,29 @@ npm install --save-dev /path/to/EventLab/packages/core
 ```
 
 The build step is not optional: the package's `exports` point at `dist/`, so an
-unbuilt clone resolves to nothing and you get `ERR_MODULE_NOT_FOUND` with no
+unbuilt clone resolves to nothing and gives you `ERR_MODULE_NOT_FOUND` with no
 hint as to why.
-
-</details>
 
 Requires **Node 22 or 24** — those are what CI covers; the `engines` floor is
 `>=22`. **ESM only**: there is no CommonJS build, so `require()` will fail, and
 TypeScript consumers need `"moduleResolution": "node16"`, `"nodenext"` or
 `"bundler"`. No runtime dependencies. No cloud account, no Docker and no
 database is needed to run the default example.
+
+<details>
+<summary>Why not <code>npm install @masterplaycoding/eventlab</code>?</summary>
+
+Because it is not on npm yet, and saying otherwise would be the kind of claim
+this project spends a lot of words avoiding.
+
+The publishing pipeline is built and tested — see
+[RELEASING.md](RELEASING.md) and
+[`.github/workflows/release.yml`](.github/workflows/release.yml), which gates a
+publish on the same packed-tarball verification CI runs. It is deliberately
+held until the `0.2` API settles, since barriers will extend the public
+surface and a registry version is permanent.
+
+</details>
 
 ## Running the examples
 
@@ -196,8 +201,8 @@ ends up in*.
 
 | Milestone | Contents | State |
 |---|---|---|
-| `0.1.0` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples, npm publication | in progress |
-| `0.2` | Explicit barriers, and an example that only a barrier can reproduce | planned |
+| `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples | **implemented** |
+| `0.2` | Explicit barriers, an example only a barrier can reproduce, and the first npm release | next |
 | `0.3` | Controlled restart hooks, PostgreSQL inbox/outbox example, CLI, static HTML report | planned |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
 
