@@ -7,10 +7,18 @@ npm ci
 npm run typecheck
 npm test
 npm run verify:packaged
+npm run docs
 ```
 
 Node 22 or 24. No database, no Docker and no cloud account is needed for
 anything in the repository today.
+
+`verify:packaged` is the one worth running before you open a pull request. It
+packs the library, installs the tarball into a clean directory outside the
+workspace, and runs the README example against it — including asserting that
+`formatReport`'s output still equals the console block printed in the README.
+Workspace tests cannot catch a packaging mistake or a documentation drift; that
+script can.
 
 ## What a change needs
 
@@ -41,8 +49,9 @@ These are genuinely useful and genuinely self-contained:
 
 1. **More transforms.** `dropRandom({ probability })` to model a lossy
    transport, or `outOfOrderPairs()` for a targeted swap rather than a full
-   shuffle. Needs a `TransformRecord`, a property test, and a paragraph in the
-   quickstart table.
+   shuffle. [docs/extending.md](docs/extending.md) walks through writing one;
+   a transform, a property test and a row in the quickstart table is the whole
+   change.
 2. **A `content-length` sanity check** in the HTTP client: warn in the report
    when a response declares a length that disagrees with the bytes received.
 3. **Better transport-error messages on Windows.** `ECONNREFUSED` surfaces
@@ -53,6 +62,8 @@ These are genuinely useful and genuinely self-contained:
    down whatever was awkward.
 5. **Report summary helpers.** `groupByEvent(report)` and similar, in
    `packages/core/src/report/summary.ts`, so users write fewer `filter` calls.
+   Anything added there should also be rendered by `formatReport` or listed in
+   [docs/api.md](docs/api.md) — an undocumented export is one nobody finds.
 
 Larger items — barriers, checkpoints, the PostgreSQL example, the CLI, the HTML
 report — are on the roadmap in the README. Please open an issue before starting
