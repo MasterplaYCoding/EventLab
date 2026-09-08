@@ -24,6 +24,11 @@ export {
   deliveriesFor,
   summariseStatuses,
 } from "./report/summary.js";
+export {
+  assertRunPassed,
+  formatReport,
+  type FormatReportOptions,
+} from "./report/format.js";
 
 export type {
   Assertion,

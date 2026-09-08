@@ -51,6 +51,9 @@ try {
 
   console.log("→ running the README example against the installed package");
   cpSync(join(repoRoot, "acceptance", "readme-example.mjs"), join(consumer, "readme-example.mjs"));
+  // The fixture compares formatReport's output to the console block printed in
+  // the README, so the README itself is an input to the check.
+  cpSync(join(repoRoot, "README.md"), join(consumer, "README.md"));
   run(process.execPath, ["readme-example.mjs"], consumer);
 
   console.log("✓ packaged install verified");

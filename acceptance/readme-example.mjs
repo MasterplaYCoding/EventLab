@@ -14,9 +14,17 @@
  * Exit code 0 means the README is accurate. Anything else means it is not.
  */
 import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 
-import { burst, createPlan, duplicate, runPlan, shuffle } from "@masterplaycoding/eventlab";
+import {
+  burst,
+  createPlan,
+  duplicate,
+  formatReport,
+  runPlan,
+  shuffle,
+} from "@masterplaycoding/eventlab";
 
 // --- the application under test -------------------------------------------
 
@@ -128,6 +136,35 @@ assert.ok(report.fixtureDigest.startsWith("sha256:"));
 
 // The report must not leak payloads into an artifact.
 assert.ok(!JSON.stringify(report).includes("12500"), "reports must not embed fixture bodies");
+
+// --- the README's console block must be this library's actual output --------
+//
+// The block used to be typeset by hand, which meant the most prominent claim
+// in the project was the one thing nothing verified. Now it is compared to
+// formatReport's output, from the packaged library, on every CI job.
+
+const readme = await readFile("README.md", "utf8");
+
+// The first fenced block carrying no language tag after "### The failing test".
+// Selecting by info string rather than by position matters: the section opens
+// with a ```ts block, and that block's *closing* fence looks exactly like the
+// opening of an untagged one.
+const section = readme.split("### The failing test")[1] ?? "";
+const fences = [...section.matchAll(/^```([^\n]*)\r?\n([\s\S]*?)^```/gm)];
+const printed = fences
+  .find((fence) => fence[1].trim() === "")?.[2]
+  ?.replace(/\r/g, "")
+  .replace(/\n$/, "");
+
+assert.ok(printed !== undefined, "could not find the console block in README.md");
+
+// The digest depends on the fixture bodies, so the README shows a real prefix
+// rather than a placeholder; compare against the same rendering the tool emits.
+assert.equal(
+  formatReport(report),
+  printed,
+  "README.md's console block is not what formatReport produces",
+);
 
 await new Promise((resolve, reject) =>
   server.close((error) => (error ? reject(error) : resolve())),

@@ -40,7 +40,7 @@ wrong.
 ### The failing test
 
 ```ts
-import { burst, createPlan, duplicate, runPlan, shuffle } from "@masterplaycoding/eventlab";
+import { assertRunPassed, burst, createPlan, duplicate, runPlan, shuffle } from "@masterplaycoding/eventlab";
 
 const plan = createPlan({
   scenario: "payments delivered three times",
@@ -67,13 +67,13 @@ const report = await runPlan(plan, {
       name: "each order is fulfilled exactly once",
       check: () => {
         const writes = store.writeCount();
-        if (writes !== 2) throw new Error(`expected 2 fulfilments, found ${writes}`);
+        if (writes !== 2) throw new Error(`expected 2 fulfilment writes, found ${writes}`);
       },
     },
   ],
 });
 
-expect(report.passed).toBe(false);
+assertRunPassed(report);   // throws with the block below
 ```
 
 ```
@@ -81,7 +81,7 @@ expect(report.passed).toBe(false);
   expected 2 fulfilment writes, found 3
 
   9 deliveries, all 200 OK
-  seed 20260908 · planner 1 · fixtures sha256:8f2b…
+  seed 20260908 · planner 1 · fixtures sha256:603b…
 ```
 
 ### The fix, and the same test passing
