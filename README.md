@@ -6,9 +6,11 @@ If a webhook arrives twice, out of order, or at the same time as its twin, does
 your application still end up in the right state? EventLab turns that question
 into a test you can run in the runner you already have.
 
-> **Status: pre-release, working toward `0.1`.** Everything documented below is
-> implemented and tested in CI. Anything not documented below is not built yet;
-> see [Roadmap](#roadmap).
+> **Status: pre-release, working toward `0.1.0`.** Everything documented below
+> is implemented and tested in CI — including the console block further down,
+> which is compared against the library's own output on every run. Not yet on
+> npm; see [Install](#install). Anything not documented below is not built; see
+> [Roadmap](#roadmap).
 
 ---
 
@@ -194,9 +196,9 @@ ends up in*.
 
 | Milestone | Contents | State |
 |---|---|---|
-| `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, duplicate-handler and voting examples | **implemented** |
-| `0.2` | Explicit barriers, controlled restart hooks, PostgreSQL inbox/outbox recovery example | planned |
-| `0.3` | CLI (`run`, `replay`, `report`), static HTML timeline report | planned |
+| `0.1.0` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples, npm publication | in progress |
+| `0.2` | Explicit barriers, and an example that only a barrier can reproduce | planned |
+| `0.3` | Controlled restart hooks, PostgreSQL inbox/outbox example, CLI, static HTML report | planned |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
 
 ## Documentation

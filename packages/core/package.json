@@ -1,6 +1,6 @@
 {
   "name": "@masterplaycoding/eventlab",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Reproducible duplicate, delayed, reordered and concurrent event delivery testing for HTTP targets.",
   "license": "MIT",
   "type": "module",
@@ -28,5 +28,19 @@
   "scripts": {
     "build": "tsc --build",
     "clean": "tsc --build --clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MasterplaYCoding/EventLab.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/MasterplaYCoding/EventLab/issues"
+  },
+  "homepage": "https://github.com/MasterplaYCoding/EventLab#readme",
+  "author": "Matei Ursache",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
