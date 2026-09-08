@@ -12,22 +12,27 @@ into a test you can run in the runner you already have.
 
 ---
 
-## The bug, in twelve lines
+## The bug, in six lines
 
-Here is a payment webhook handler. It looks right.
+Here is a payment webhook handler. It is the version you write *after* reading
+the provider's documentation about duplicate deliveries.
 
 ```ts
 async function handlePayment(event: PaymentEvent) {
-  const alreadyFulfilled = await store.hasFulfillment(event.orderId);
-  if (!alreadyFulfilled) {
-    await store.recordFulfillment(event.orderId);
-  }
+  if (!(await store.claimEvent(event.eventId))) return;   // already seen this event
+  await store.recordFulfillment(event.orderId);
 }
 ```
 
-Stripe documents that webhooks can be delivered more than once and are not
-guaranteed to arrive in order. So the same event shows up twice. Both copies
-read `false` before either writes, and the customer's order is fulfilled twice.
+The deduplication is real, and `claimEvent` is genuinely atomic. Redeliver the
+same event a hundred times and it fulfils once.
+
+It is still wrong. Event-id deduplication answers *"have I seen this message
+before?"*, and the invariant the business cares about is *"has this order been
+fulfilled before?"*. Providers routinely send more than one event for a single
+occurrence — Stripe describes both `payment_intent.succeeded` and
+`charge.succeeded` for one payment — and two different event ids sail straight
+past the check. The customer's order is fulfilled twice.
 
 Every HTTP request returned `200`. Nothing in a log or a status dashboard looks
 wrong.
@@ -38,8 +43,8 @@ wrong.
 import { burst, createPlan, duplicate, runPlan, shuffle } from "@masterplaycoding/eventlab";
 
 const plan = createPlan({
-  scenario: "payment delivered three times",
-  events: paymentEvents,
+  scenario: "payments delivered three times",
+  events: paymentEvents,   // two orders; one of them described by two events
   seed: 20260908,
   concurrency: 4,
   transforms: [duplicate({ copies: 3 }), shuffle(), burst()],
@@ -73,9 +78,9 @@ expect(report.passed).toBe(false);
 
 ```
 ✗ each order is fulfilled exactly once
-  expected 2 fulfilments, found 4
+  expected 2 fulfilment writes, found 3
 
-  6 deliveries, all 200 OK
+  9 deliveries, all 200 OK
   seed 20260908 · planner 1 · fixtures sha256:8f2b…
 ```
 
@@ -88,13 +93,23 @@ async function handlePayment(event: PaymentEvent) {
 }
 ```
 
-`recordFulfillmentOnce` is a conditional insert — a unique constraint on
-`order_id`, or `INSERT … ON CONFLICT DO NOTHING`. There is no suspension point
-between its check and its write, so no delivery can interleave into it.
+One line different, and the difference is *which thing is unique*. Claiming the
+event id stays, because dropping redeliveries early is cheap — but it is an
+optimisation, not the guarantee. `recordFulfillmentOnce` is a conditional
+insert: a unique constraint on `order_id`, or `INSERT … ON CONFLICT DO NOTHING`.
+It makes fulfilment idempotent per order, whatever combination of events
+describes it.
 
 The identical scenario now passes. Both handlers, both tests and the store live
 in [`examples/duplicate-handler`](examples/duplicate-handler); run them with
 `npm test`.
+
+Note what this failure does **not** depend on: how those nine deliveries
+interleaved. It reproduces identically on every platform and every run. A test
+that only catches a bug when the scheduler cooperates is not a regression test —
+see [the determinism boundary](docs/decisions/001-determinism-boundary.md), and
+[`examples/voting`](examples/voting) for how a genuinely concurrent bug is
+demonstrated without hoping.
 
 ---
 

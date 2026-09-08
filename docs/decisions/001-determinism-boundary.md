@@ -55,13 +55,41 @@ Do not raise the copy count and hope. A scenario that fails one run in fifty is
 a bad regression test: it is slow, it is flaky, and when it goes green nobody
 knows whether it was fixed.
 
-Instead, make the boundary explicit. The application under test signals when it
-has reached a named point, and the scenario waits for that signal rather than
-for a duration. This is what the `0.2` barrier and checkpoint work is for.
+This project learned that the hard way, on its own examples. The first version
+of the duplicate-handler example used a check-then-act handler and asserted
+that duplicate deliveries would interleave into the gap between its read and
+its write. On Windows that happened reliably. On Linux and macOS it never
+happened at all: the same plan, the same seed, the same nine deliveries, and
+the handler produced exactly the right answer because the event loop read each
+request's body, ran its handler to completion, and only then looked at the next
+socket. CI went red on three of six configurations, and the "failing" ones were
+the ones where nothing was wrong.
 
-Sleep-based coordination is specifically rejected. `await sleep(50)` between
+Two fixes came out of that, and they are the two options available in general.
+
+**Prefer a failure that does not need an interleaving at all.** The
+duplicate-handler example now fails because two different event ids describe
+one order, so event-id deduplication lets both through. That is a real,
+common, and entirely sequential bug. It reproduces on every platform, every
+run, and it makes a better demonstration precisely because nothing about it is
+subtle.
+
+**When the bug genuinely is a race, make the overlap explicit.** The voting
+example's bug is a non-transactional read-then-write, and there is no
+sequential ordering that exposes it. So the application under test declares
+where its window is, and the test holds that window open until both deliveries
+have entered it. The gate is in the *example*, not the library — EventLab has
+no way to reach inside an application and hold a lock open, and should not
+acquire one. Both the broken and the corrected handler face the identical gate,
+so the difference in outcome is attributable to the handler and nothing else.
+
+Sleep-based coordination is rejected in both cases. `await sleep(50)` between
 deliveries encodes an assumption about your CI machine's speed and nothing
 about your system's semantics.
+
+The `0.2` barrier and checkpoint work generalises the second option: a named
+point the application signals, and a scenario that waits for the signal rather
+than for a duration.
 
 ## What the report tells you about this
 

@@ -19,39 +19,45 @@ export interface ExampleServer {
 }
 
 /**
- * The handler almost everyone writes first.
+ * The handler almost everyone writes second.
  *
- * "Have we fulfilled this order? No? Then fulfil it." It reads correctly and
- * it is wrong under at-least-once delivery: two copies of the same event can
- * both pass the check before either writes. Providers that document duplicate
- * webhook deliveries - Stripe among them - make this a routine production
- * condition rather than an exotic one.
+ * The first attempt has no idempotency at all and is obviously wrong. This one
+ * is the version written after reading the provider's documentation: it
+ * deduplicates on the provider's event id, so redelivering an event is a
+ * no-op. That part is correct, and `claimEvent` is genuinely indivisible, so
+ * there is no race in it.
+ *
+ * It is still wrong, because event-id deduplication answers the question
+ * "have I seen this *message* before?" when the invariant the business cares
+ * about is "has this *order* been fulfilled before?". Providers routinely send
+ * more than one event for a single real-world occurrence - Stripe describes
+ * both `payment_intent.succeeded` and `charge.succeeded` for one payment - and
+ * two different event ids sail straight past this check.
+ *
+ * No timing is involved. This handler fulfils the order twice on every
+ * platform, on every run.
  */
 async function handleBroken(store: OrderStore, event: PaymentEvent): Promise<void> {
-  const alreadyFulfilled = await store.hasFulfillment(event.orderId);
-  if (!alreadyFulfilled) {
-    await store.recordFulfillment(event.orderId);
+  if (!(await store.claimEvent(event.eventId))) {
+    return;
   }
+  await store.recordFulfillment(event.orderId);
 }
 
 /**
  * The corrected handler.
  *
- * Two independent defences, because they cover different failures:
+ * One line different, and the difference is which thing is unique. Claiming
+ * the event id stays, because it is a cheap way to drop redeliveries early -
+ * but it is an optimisation, not the guarantee. The guarantee is the
+ * conditional insert, which makes fulfilment idempotent per *order*, whatever
+ * combination of events describes it.
  *
- * 1. Claiming the event id makes redelivery of the *same* event a no-op. This
- *    is the cheap common case.
- * 2. The conditional insert makes fulfilment idempotent per order even when
- *    two *different* event ids describe the same outcome, or when two claims
- *    race. This is the one that actually holds the invariant; the first is an
- *    optimisation on top of it.
- *
- * Note what is missing: no sleep, no retry, no "check again just in case".
- * Correctness comes from a single indivisible operation, not from timing.
+ * Note what is absent: no sleep, no retry, no second look. Correctness comes
+ * from a single indivisible operation, not from timing.
  */
 async function handleFixed(store: OrderStore, event: PaymentEvent): Promise<void> {
-  const claimed = await store.claimEvent(event.eventId);
-  if (!claimed) {
+  if (!(await store.claimEvent(event.eventId))) {
     return;
   }
   await store.recordFulfillmentOnce(event.orderId);

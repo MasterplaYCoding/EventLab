@@ -1,3 +1,4 @@
+import type { InterleavingGate } from "./interleaving.js";
 import { Mutex, tick, type PollStore } from "./pollStore.js";
 
 export interface VoteCommand {
@@ -35,12 +36,24 @@ export class VoteRejected extends Error {
  * counters drift away from the vote rows they are supposed to summarise.
  *
  * This is teaching material, not a recommended implementation.
+ *
+ * The `gate` parameter is not part of the bug and would not exist in real
+ * code. It marks the window between the read and the write, and holds it open
+ * until a second delivery for the same voter has also read - so the
+ * interleaving that makes this handler wrong happens on every platform and
+ * every run, instead of on whichever machine happens to schedule it that way.
+ * See {@link InterleavingGate} for why that matters.
  */
-export async function voteBroken(store: PollStore, command: VoteCommand): Promise<void> {
+export async function voteBroken(
+  store: PollStore,
+  command: VoteCommand,
+  gate?: InterleavingGate,
+): Promise<void> {
   const { pollId, optionId, userId } = command;
 
   const existing = store.findVote(userId, pollId);
   await tick();
+  await gate?.arrive(`${userId}/${pollId}`);
 
   if (existing !== undefined) {
     if (existing.optionId === optionId) {
@@ -91,7 +104,7 @@ export async function voteBroken(store: PollStore, command: VoteCommand): Promis
  * either way. Choosing between them needs an ordering the events themselves
  * carry - a version or a sequence number - not a lock.
  */
-export function voteFixed(store: PollStore, mutex: Mutex) {
+export function voteFixed(store: PollStore, mutex: Mutex, gate?: InterleavingGate) {
   return async (command: VoteCommand): Promise<void> => {
     const { pollId, optionId, userId } = command;
 
@@ -102,6 +115,11 @@ export function voteFixed(store: PollStore, mutex: Mutex) {
     if (!poll.options.some((option) => option.id === optionId)) {
       throw new VoteRejected(422, `option ${optionId} does not belong to poll ${pollId}`);
     }
+
+    // The same gate the broken handler uses, at the same point in the request,
+    // so both handlers face an identical overlap. The difference in outcome is
+    // then attributable to the handler and nothing else.
+    await gate?.arrive(`${userId}/${pollId}`);
 
     await mutex.runExclusive(async () => {
       const inserted = store.insertVoteIfAbsent({ userId, pollId, optionId });

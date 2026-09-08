@@ -2,7 +2,13 @@ import { afterEach, describe, expect, it } from "vitest";
 import { burst, createPlan, duplicate, runPlan, shuffle } from "@masterplaycoding/eventlab";
 import type { EventFixture, HttpTarget, RunReport } from "@masterplaycoding/eventlab";
 
-import { demoPoll, startVotingServer, type Mode, type VotingServer } from "../src/server.js";
+import {
+  demoPoll,
+  startUngatedVotingServer,
+  startVotingServer,
+  type Mode,
+  type VotingServer,
+} from "../src/server.js";
 
 let app: VotingServer | undefined;
 
@@ -11,21 +17,39 @@ afterEach(async () => {
   app = undefined;
 });
 
-/**
- * Four users vote, and two of them change their mind. Fixtures describe what
- * the users did once; the plan is what the transport does to it.
- */
-const VOTERS = 4;
+const VOTERS = 2;
 
+/**
+ * Two people vote once each. Everything that happens beyond that is the
+ * transport's doing, which is where duplication belongs in a model of the
+ * system.
+ */
 const voteEvents: EventFixture[] = [
   { id: "vote_u1", body: { pollId: "poll_1", optionId: "opt_a", userId: "user_1" } },
   { id: "vote_u2", body: { pollId: "poll_1", optionId: "opt_b", userId: "user_2" } },
-  { id: "vote_u3", body: { pollId: "poll_1", optionId: "opt_a", userId: "user_3" } },
-  { id: "vote_u4", body: { pollId: "poll_1", optionId: "opt_b", userId: "user_4" } },
-  { id: "vote_u1_changed", body: { pollId: "poll_1", optionId: "opt_b", userId: "user_1" } },
-  { id: "vote_u3_changed", body: { pollId: "poll_1", optionId: "opt_b", userId: "user_3" } },
 ];
 
+function jsonTarget(baseUrl: string): HttpTarget {
+  return {
+    baseUrl,
+    request: ({ event }) => ({
+      method: "POST",
+      path: "/votes",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(event.body),
+    }),
+  };
+}
+
+/**
+ * Each vote delivered twice, shuffled, all four released together against a
+ * concurrency of four.
+ *
+ * Both deliveries for a voter are therefore in flight at once, and the
+ * server's interleaving gate holds them both inside the critical section
+ * before either leaves it. The overlap is a property of the scenario, not of
+ * the machine running it.
+ */
 async function runVotingScenario(mode: Mode): Promise<{ report: RunReport; app: VotingServer }> {
   app = await startVotingServer(mode);
   const server = app;
@@ -38,19 +62,9 @@ async function runVotingScenario(mode: Mode): Promise<{ report: RunReport; app: 
     transforms: [duplicate({ copies: 2 }), shuffle(), burst()],
   });
 
-  const target: HttpTarget = {
-    baseUrl: server.baseUrl,
-    request: ({ event }) => ({
-      method: "POST",
-      path: "/votes",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(event.body),
-    }),
-  };
-
   const report = await runPlan(plan, {
     events: voteEvents,
-    target,
+    target: jsonTarget(server.baseUrl),
     hooks: { reset: () => server.reset() },
     assertions: [
       {
@@ -83,57 +97,55 @@ async function runVotingScenario(mode: Mode): Promise<{ report: RunReport; app: 
 }
 
 describe("the GOATalking-shaped voting endpoint", () => {
-  it("returns 200 for every delivery while its counters drift away from the vote rows", async () => {
+  it("returns 200 for every delivery while recording two vote rows per voter", async () => {
     const { report, app: server } = await runVotingScenario("broken");
 
     expect(report.attempts).toHaveLength(voteEvents.length * 2);
     expect(report.attempts.every((attempt) => attempt.outcome.kind === "response")).toBe(true);
 
+    // Read the vote, then write it, with no transaction spanning the two: both
+    // deliveries find no existing row and both insert one.
+    expect(server.store.voteRows()).toHaveLength(4);
     expect(report.passed).toBe(false);
-    const failed = report.assertions.filter((assertion) => assertion.status === "failed");
-    expect(failed.length).toBeGreaterThan(0);
+    expect(report.assertions.map((assertion) => assertion.status)).toEqual(["failed", "failed"]);
 
-    // The concrete symptom: four people voted, and the poll holds more than
-    // four vote rows. Note that the denormalised counters agree with those
-    // rows - they drifted together, in the same direction. A consistency
-    // check between the counter and the rows would have reported everything
-    // as fine, which is why the invariant worth asserting is the one about
-    // users, not the one about internal agreement.
-    expect(server.store.voteRows().length).toBeGreaterThan(VOTERS);
+    // Worth noticing: the denormalised counters agree with those rows. They
+    // drifted together, in the same direction, so a consistency check between
+    // the counter and its source would have reported everything as fine. The
+    // invariant worth asserting is the one about users.
+    expect(server.store.storedTallies(demoPoll.id)).toEqual(
+      server.store.derivedTallies(demoPoll.id),
+    );
   });
 });
 
 describe("the corrected voting endpoint", () => {
-  it("keeps one vote row per user and never disagrees with itself", async () => {
+  it("keeps one vote row per user under the identical overlap", async () => {
     const { report, app: server } = await runVotingScenario("fixed");
 
+    expect(report.attempts).toHaveLength(voteEvents.length * 2);
     expect(report.passed).toBe(true);
-    expect(server.store.voteRows()).toHaveLength(4);
+    expect(server.store.voteRows()).toHaveLength(VOTERS);
 
     const derived = server.store.derivedTallies(demoPoll.id);
-    expect(derived.opt_a! + derived.opt_b!).toBe(4);
+    expect(derived.opt_a! + derived.opt_b!).toBe(VOTERS);
   });
 
   it("rejects an option that belongs to another poll", async () => {
-    app = await startVotingServer("fixed");
+    app = await startUngatedVotingServer();
     const server = app;
 
     const strayEvents: EventFixture[] = [
-      { id: "vote_stray", body: { pollId: "poll_1", optionId: "opt_from_elsewhere", userId: "user_9" } },
+      {
+        id: "vote_stray",
+        body: { pollId: "poll_1", optionId: "opt_from_elsewhere", userId: "user_9" },
+      },
     ];
     const plan = createPlan({ scenario: "stray option", events: strayEvents, seed: 5 });
 
     const report = await runPlan(plan, {
       events: strayEvents,
-      target: {
-        baseUrl: server.baseUrl,
-        request: ({ event }) => ({
-          method: "POST",
-          path: "/votes",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(event.body),
-        }),
-      },
+      target: jsonTarget(server.baseUrl),
       // A 422 is the point of this test, so the rejection is declared rather
       // than treated as a delivery failure.
       expect: { deliveries: "declared" },

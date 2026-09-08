@@ -21,19 +21,20 @@ import { burst, createPlan, duplicate, runPlan, shuffle } from "@masterplaycodin
 // --- the application under test -------------------------------------------
 
 const fulfillments = new Set();
-let writes = 0;
+const processedEvents = new Set();
+const writes = [];
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
-/** The handler from the top of the README: check, then act. */
+/** The handler from the top of the README: deduplicated by event id. */
 async function handlePayment(event) {
   await tick();
-  const alreadyFulfilled = fulfillments.has(event.orderId);
+  if (processedEvents.has(event.eventId)) return;
+  processedEvents.add(event.eventId);
+
   await tick();
-  if (!alreadyFulfilled) {
-    writes += 1;
-    fulfillments.add(event.orderId);
-  }
+  writes.push(event.orderId);
+  fulfillments.add(event.orderId);
 }
 
 const server = createServer((request, response) => {
@@ -52,13 +53,16 @@ const baseUrl = `http://127.0.0.1:${server.address().port}`;
 
 // --- the README example ----------------------------------------------------
 
+// Two orders. ord_1001 is described by two events, exactly as a provider that
+// emits both a payment and a charge notification would.
 const paymentEvents = [
   { id: "evt_payment_1", body: { eventId: "evt_payment_1", orderId: "ord_1001", amount: 4999 } },
   { id: "evt_payment_2", body: { eventId: "evt_payment_2", orderId: "ord_1002", amount: 12500 } },
+  { id: "evt_charge_1", body: { eventId: "evt_charge_1", orderId: "ord_1001", amount: 4999 } },
 ];
 
 const plan = createPlan({
-  scenario: "payment delivered three times",
+  scenario: "payments delivered three times",
   events: paymentEvents,
   seed: 20260908,
   concurrency: 4,
@@ -79,15 +83,16 @@ const report = await runPlan(plan, {
   hooks: {
     reset: () => {
       fulfillments.clear();
-      writes = 0;
+      processedEvents.clear();
+      writes.length = 0;
     },
   },
   assertions: [
     {
       name: "each order is fulfilled exactly once",
       check: () => {
-        if (writes !== 2) {
-          throw new Error(`expected 2 fulfilments, found ${writes}`);
+        if (writes.length !== 2) {
+          throw new Error(`expected 2 fulfilment writes, found ${writes.length}`);
         }
       },
     },
@@ -96,14 +101,28 @@ const report = await runPlan(plan, {
 
 // --- the claims the README makes -------------------------------------------
 
-assert.equal(report.attempts.length, 6, "the plan should deliver six attempts");
+const writesFor = (orderId) => writes.filter((written) => written === orderId).length;
+
+assert.equal(report.attempts.length, 9, "the plan should deliver nine attempts");
 assert.ok(
-  report.attempts.every((attempt) => attempt.outcome.kind === "response" && attempt.outcome.status === 200),
+  report.attempts.every(
+    (attempt) => attempt.outcome.kind === "response" && attempt.outcome.status === 200,
+  ),
   "every delivery should return 200 - that is the trap the README describes",
 );
 assert.equal(report.passed, false, "the broken handler must fail the business assertion");
 assert.equal(report.assertions[0].status, "failed");
-assert.ok(writes > 2, `expected duplicate fulfilment writes, found ${writes}`);
+assert.equal(
+  report.assertions[0].message,
+  "expected 2 fulfilment writes, found 3",
+  "the README prints this exact failure",
+);
+
+// The specific, platform-independent shape of the bug: one order fulfilled
+// twice because two event ids describe it.
+assert.equal(writesFor("ord_1001"), 2);
+assert.equal(writesFor("ord_1002"), 1);
+
 assert.equal(report.seed, 20260908);
 assert.ok(report.fixtureDigest.startsWith("sha256:"));
 
@@ -116,5 +135,6 @@ await new Promise((resolve, reject) =>
 
 console.log(
   `README example verified against the packaged library: ` +
-    `${report.attempts.length} deliveries, all 200, ${writes} fulfilment writes for 2 orders.`,
+    `${report.attempts.length} deliveries, all 200, ord_1001 fulfilled ` +
+    `${writesFor("ord_1001")} times.`,
 );
