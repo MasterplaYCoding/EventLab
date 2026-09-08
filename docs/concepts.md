@@ -16,8 +16,9 @@ model.
 A fixture is one *thing that happened*: one payment, one vote, one order
 update. An attempt is one *delivery of it*.
 
-Duplicating an event produces several attempts that share the fixture's
-`eventId` and each have their own `attemptId`, formatted `<eventId>#<copyIndex>`.
+Duplicating an event produces several attempts that share the fixture's `id`
+and each have their own `attemptId`, formatted `<eventId>#<copyIndex>`. (The
+fixture's field is `id`; the attempt's copy of it is `eventId`.)
 Identity has to survive duplication, because deduplication bugs are precisely
 what this toolkit looks for — regenerating an id per attempt would make every
 handler look correct.

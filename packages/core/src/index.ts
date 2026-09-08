@@ -15,6 +15,8 @@ export {
   type AttemptDraft,
   type Transform,
 } from "./plan/transforms.js";
+// Part of Transform's signature, so anyone writing one needs to name it.
+export type { Rng } from "./internal/random.js";
 export { assertFixturesMatch, parsePlan, serializePlan } from "./plan/savedPlan.js";
 export { runPlan } from "./run/runPlan.js";
 export { HarnessError, isHarnessError, type HarnessErrorCode } from "./errors.js";

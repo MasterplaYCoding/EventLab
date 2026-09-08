@@ -5,3 +5,4 @@ coverage/
 .eventlab/
 *.log
 .DS_Store
+docs/api-generated/

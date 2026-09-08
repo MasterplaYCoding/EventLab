@@ -115,12 +115,51 @@ demonstrated without hoping.
 
 ## Install
 
+> **Not published to npm yet.** The command below works from `0.1.0`; until
+> then, use the source install underneath it.
+
 ```bash
 npm install --save-dev @masterplaycoding/eventlab
 ```
 
-Requires Node 22 or 24. ESM only. No runtime dependencies. No cloud account, no
-Docker and no database is needed to run the default example.
+<details>
+<summary>Installing from source today</summary>
+
+```bash
+git clone https://github.com/MasterplaYCoding/EventLab.git
+cd EventLab && npm ci && npm run build
+```
+
+```bash
+cd /path/to/your-project
+npm install --save-dev /path/to/EventLab/packages/core
+```
+
+The build step is not optional: the package's `exports` point at `dist/`, so an
+unbuilt clone resolves to nothing and you get `ERR_MODULE_NOT_FOUND` with no
+hint as to why.
+
+</details>
+
+Requires **Node 22 or 24** — those are what CI covers; the `engines` floor is
+`>=22`. **ESM only**: there is no CommonJS build, so `require()` will fail, and
+TypeScript consumers need `"moduleResolution": "node16"`, `"nodenext"` or
+`"bundler"`. No runtime dependencies. No cloud account, no Docker and no
+database is needed to run the default example.
+
+## Running the examples
+
+Both examples live in this repository and run from its root:
+
+```bash
+git clone https://github.com/MasterplaYCoding/EventLab.git
+cd EventLab && npm ci && npm test
+```
+
+- [`examples/duplicate-handler`](examples/duplicate-handler) — the README's
+  bug, in broken and corrected form.
+- [`examples/voting`](examples/voting) — a genuinely concurrent bug, adapted
+  from a real project, demonstrated without hoping for a race.
 
 ## Five-minute quickstart
 
@@ -162,8 +201,11 @@ ends up in*.
 
 ## Documentation
 
-- [Quickstart](docs/quickstart.md)
+- [Quickstart](docs/quickstart.md) — including how to get your app onto loopback.
 - [Concepts](docs/concepts.md)
+- [API reference](docs/api.md) — every export, the error codes, the limits.
+- [Troubleshooting](docs/troubleshooting.md) — start here when a run confuses you.
+- [Writing a transform](docs/extending.md)
 - [What deterministic replay does and does not mean](docs/decisions/001-determinism-boundary.md)
 - [Why a timeout does not prove a write failed](docs/decisions/002-timeouts-prove-nothing.md)
 - [How inbox/outbox transactions behave across crashes](docs/decisions/003-inbox-outbox-across-crashes.md)

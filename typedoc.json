@@ -1,0 +1,10 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["packages/core/src/index.ts"],
+  "out": "docs/api-generated",
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "includeVersion": true,
+  "readme": "none",
+  "githubPages": false
+}
