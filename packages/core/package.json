@@ -1,0 +1,32 @@
+{
+  "name": "@masterplaycoding/eventlab",
+  "version": "0.0.0",
+  "description": "Reproducible duplicate, delayed, reordered and concurrent event delivery testing for HTTP targets.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "webhooks",
+    "idempotency",
+    "testing",
+    "event-driven",
+    "reliability"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  }
+}
