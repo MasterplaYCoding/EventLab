@@ -1,0 +1,28 @@
+{
+  "name": "eventlab-workspace",
+  "private": true,
+  "type": "module",
+  "description": "Workspace root for EventLab, a testing toolkit for unreliable event delivery.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc --build --force",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "docs": "typedoc"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "fast-check": "^3.23.2",
+    "typedoc": "^0.28.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
+  }
+}
