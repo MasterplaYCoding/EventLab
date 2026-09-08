@@ -76,8 +76,15 @@ export class PollStore {
       tallies[option.id] = 0;
     }
     for (const vote of this.votes) {
-      if (vote.pollId === pollId && tallies[vote.optionId] !== undefined) {
-        tallies[vote.optionId] += 1;
+      if (vote.pollId !== pollId) {
+        continue;
+      }
+      // A vote for an option the poll does not contain is not counted. That is
+      // the drift the broken handler produces, so read it from the tally rather
+      // than inventing a bucket for it.
+      const counted = tallies[vote.optionId];
+      if (counted !== undefined) {
+        tallies[vote.optionId] = counted + 1;
       }
     }
     return tallies;
