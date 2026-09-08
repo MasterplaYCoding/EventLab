@@ -23,8 +23,35 @@ export interface DeliveryAttempt {
   readonly copyIndex: number;
   /** Position in the plan. Used as the deterministic tie-break at run time. */
   readonly order: number;
-  /** Intended offset from the start of the run, in milliseconds. */
+  /**
+   * Intended offset from the start of this attempt's phase, in milliseconds.
+   *
+   * Phase-relative, not run-relative: a barrier resets the clock, because the
+   * whole point of one is that what follows it did not start until what
+   * preceded it had finished.
+   */
   readonly delayMs: number;
+  /**
+   * Which phase this attempt belongs to. 0 unless the scenario declared
+   * barriers.
+   */
+  readonly phase: number;
+}
+
+/**
+ * A synchronisation point between two phases of a plan.
+ *
+ * Everything in the preceding phase must complete before anything in the next
+ * one is released. If the barrier names a checkpoint, that runs in between —
+ * which is how a scenario waits for something the application signals rather
+ * than for a duration somebody guessed.
+ */
+export interface PlanBarrier {
+  readonly name: string;
+  /** The phase this barrier follows. Attempts in later phases wait for it. */
+  readonly afterPhase: number;
+  /** Key in {@link ScenarioHooks.checkpoints}. Validated during planning. */
+  readonly checkpoint?: string;
 }
 
 /** A record of one transform, retained so a plan explains how it was built. */
@@ -49,6 +76,8 @@ export interface DeliveryPlan {
   readonly concurrency: number;
   readonly transforms: readonly TransformRecord[];
   readonly attempts: readonly DeliveryAttempt[];
+  /** Empty unless the scenario declared phases. Ordered by `afterPhase`. */
+  readonly barriers: readonly PlanBarrier[];
 }
 
 /** The request EventLab should send for one attempt. */
@@ -87,6 +116,18 @@ export interface ScenarioHooks {
   readonly reset?: () => void | Promise<void>;
   /** Always runs, including after failure and cancellation. */
   readonly teardown?: () => void | Promise<void>;
+  /**
+   * Named callbacks a barrier can wait for.
+   *
+   * This is where an application signals that it has reached a point — a
+   * worker has drained its queue, a projection has caught up, a process has
+   * been restarted. Awaiting a signal is the difference between a test that
+   * describes your system and one that describes your CI machine's speed.
+   *
+   * A barrier naming a checkpoint that does not exist is rejected during
+   * planning, not at the moment the barrier is reached.
+   */
+  readonly checkpoints?: Readonly<Record<string, () => void | Promise<void>>>;
 }
 
 /** What the runner observed for one attempt. */
@@ -117,6 +158,19 @@ export interface AttemptReport {
     readonly bodyBytes: number;
   };
   readonly outcome: DeliveryOutcome;
+}
+
+/** What happened at one barrier. */
+export interface BarrierReport {
+  readonly name: string;
+  readonly afterPhase: number;
+  readonly checkpoint?: string;
+  /** `skipped` when the run ended before this barrier was reached. */
+  readonly status: "passed" | "failed" | "skipped";
+  /** Attempts completed before the barrier released. */
+  readonly attemptsBefore: number;
+  readonly durationMs: number;
+  readonly message?: string;
 }
 
 /** Context passed to user assertions. */
@@ -204,6 +258,8 @@ export interface RunReport {
   readonly wallClockMs: number;
   readonly attempts: readonly AttemptReport[];
   readonly assertions: readonly AssertionReport[];
+  /** Empty unless the plan declared barriers. */
+  readonly barriers: readonly BarrierReport[];
   readonly expectation: DeliveryExpectation;
   /** True only when the declared expectation and every assertion passed. */
   readonly passed: boolean;

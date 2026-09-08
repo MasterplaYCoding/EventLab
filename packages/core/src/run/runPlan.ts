@@ -3,6 +3,8 @@ import { assertFixturesMatch } from "../plan/savedPlan.js";
 import { PLANNER_VERSION, REPORT_SCHEMA_VERSION } from "../version.js";
 import type {
   AttemptReport,
+  BarrierReport,
+  DeliveryAttempt,
   DeliveryPlan,
   EventFixture,
   RunLimits,
@@ -38,6 +40,7 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
   const startedAt = performance.now();
 
   const attempts: AttemptReport[] = [];
+  const barrierReports: BarrierReport[] = [];
   let assertionReports: RunReport["assertions"] = [];
   let harnessError: RunReport["harnessError"];
   let cleanup: RunReport["cleanup"] = { status: "skipped" };
@@ -45,6 +48,12 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
 
   const controller = new AbortController();
   const abort = () => controller.abort();
+  // A signal that aborted before it was handed over never fires its event
+  // again, so subscribing alone would silently run the whole scenario for a
+  // caller who had already cancelled.
+  if (options.signal?.aborted === true) {
+    controller.abort();
+  }
   options.signal?.addEventListener("abort", abort, { once: true });
   const scenarioTimer = setTimeout(() => controller.abort(), limits.scenarioTimeoutMs);
 
@@ -60,6 +69,7 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
 
     const events = indexEvents(options.events);
     assertFixturesMatch(plan, options.events);
+    assertCheckpointsExist(plan, options.hooks);
     const base = resolveBaseUrl(options.target, options.allowRemoteTargets ?? false);
 
     try {
@@ -74,55 +84,130 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
       );
     }
 
-    await schedule({
-      attempts: plan.attempts,
-      concurrency: plan.concurrency,
-      startedAt,
-      signal: controller.signal,
-      execute: async (attempt, observedStartMs) => {
-        const event = events.get(attempt.eventId);
-        if (event === undefined) {
-          // Guarded by assertFixturesMatch; kept as a loud failure rather than
-          // a silently skipped delivery, which would corrupt the report.
-          throw new HarnessError(
-            "MissingFixture",
-            `no fixture for event "${attempt.eventId}"`,
-            "events",
-          );
+    const executeAttempt = async (
+      attempt: DeliveryAttempt,
+      observedStartMs: number,
+    ): Promise<void> => {
+      const event = events.get(attempt.eventId);
+      if (event === undefined) {
+        // Guarded by assertFixturesMatch; kept as a loud failure rather than
+        // a silently skipped delivery, which would corrupt the report.
+        throw new HarnessError(
+          "MissingFixture",
+          `no fixture for event "${attempt.eventId}"`,
+          "events",
+        );
+      }
+
+      const spec = await options.target.request({ event, attempt });
+      const url = resolveRequestUrl(base, spec.path);
+      const requestStartedAt = performance.now();
+
+      const outcome = await deliver({
+        url,
+        spec,
+        timeoutMs: options.target.timeoutMs ?? limits.requestTimeoutMs,
+        maxResponseBodyBytes: limits.maxResponseBodyBytes,
+        signal: controller.signal,
+      });
+
+      attempts.push({
+        attemptId: attempt.attemptId,
+        eventId: attempt.eventId,
+        copyIndex: attempt.copyIndex,
+        order: attempt.order,
+        intendedStartMs: attempt.delayMs,
+        observedStartMs: Math.round(observedStartMs),
+        durationMs: Math.round(performance.now() - requestStartedAt),
+        request: {
+          method: spec.method,
+          url: url.toString(),
+          // Header *names* only. Signatures and authorization values must
+          // never end up in an artifact someone attaches to an issue.
+          headerNames: Object.keys(spec.headers ?? {}).sort(),
+          bodyBytes: byteLength(spec.body),
+        },
+        outcome,
+      });
+    };
+
+    // One scheduling pass per phase, with barriers in between. A plan with no
+    // barriers has exactly one phase, so this is the original behaviour.
+    const phases = groupByPhase(plan.attempts);
+
+    for (const [phase, phaseAttempts] of phases) {
+      if (controller.signal.aborted) {
+        break;
+      }
+
+      await schedule({
+        attempts: phaseAttempts,
+        concurrency: plan.concurrency,
+        // Offsets are phase-relative: a barrier resets the clock, because what
+        // follows one did not start until what preceded it had finished.
+        startedAt: performance.now(),
+        runStartedAt: startedAt,
+        signal: controller.signal,
+        execute: executeAttempt,
+      });
+
+      const barrier = plan.barriers.find((candidate) => candidate.afterPhase === phase);
+      if (barrier === undefined) {
+        continue;
+      }
+      if (controller.signal.aborted) {
+        break;
+      }
+
+      // Every attempt in the phase has settled by now - schedule() awaits them
+      // all - so the checkpoint observes a quiet system, which is the entire
+      // point of a barrier.
+      const barrierStartedAt = performance.now();
+      const attemptsBefore = attempts.length;
+
+      try {
+        if (barrier.checkpoint !== undefined) {
+          await options.hooks?.checkpoints?.[barrier.checkpoint]?.();
         }
-
-        const spec = await options.target.request({ event, attempt });
-        const url = resolveRequestUrl(base, spec.path);
-        const requestStartedAt = performance.now();
-
-        const outcome = await deliver({
-          url,
-          spec,
-          timeoutMs: options.target.timeoutMs ?? limits.requestTimeoutMs,
-          maxResponseBodyBytes: limits.maxResponseBodyBytes,
-          signal: controller.signal,
+        barrierReports.push({
+          name: barrier.name,
+          afterPhase: barrier.afterPhase,
+          ...(barrier.checkpoint === undefined ? {} : { checkpoint: barrier.checkpoint }),
+          status: "passed",
+          attemptsBefore,
+          durationMs: Math.round(performance.now() - barrierStartedAt),
         });
-
-        attempts.push({
-          attemptId: attempt.attemptId,
-          eventId: attempt.eventId,
-          copyIndex: attempt.copyIndex,
-          order: attempt.order,
-          intendedStartMs: attempt.delayMs,
-          observedStartMs: Math.round(observedStartMs),
-          durationMs: Math.round(performance.now() - requestStartedAt),
-          request: {
-            method: spec.method,
-            url: url.toString(),
-            // Header *names* only. Signatures and authorization values must
-            // never end up in an artifact someone attaches to an issue.
-            headerNames: Object.keys(spec.headers ?? {}).sort(),
-            bodyBytes: byteLength(spec.body),
-          },
-          outcome,
+      } catch (cause) {
+        // A checkpoint that throws is the application saying it never reached
+        // the state the rest of the scenario assumes, so continuing would test
+        // something nobody described.
+        barrierReports.push({
+          name: barrier.name,
+          afterPhase: barrier.afterPhase,
+          ...(barrier.checkpoint === undefined ? {} : { checkpoint: barrier.checkpoint }),
+          status: "failed",
+          attemptsBefore,
+          durationMs: Math.round(performance.now() - barrierStartedAt),
+          message: describe(cause),
         });
-      },
-    });
+        break;
+      }
+    }
+
+    // Barriers the run never got to are reported as skipped rather than
+    // omitted, so a truncated run is visibly truncated.
+    for (const barrier of plan.barriers) {
+      if (!barrierReports.some((report) => report.name === barrier.name)) {
+        barrierReports.push({
+          name: barrier.name,
+          afterPhase: barrier.afterPhase,
+          ...(barrier.checkpoint === undefined ? {} : { checkpoint: barrier.checkpoint }),
+          status: "skipped",
+          attemptsBefore: attempts.length,
+          durationMs: 0,
+        });
+      }
+    }
 
     if (controller.signal.aborted && options.signal?.aborted !== true) {
       throw new HarnessError(
@@ -159,11 +244,13 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
     wallClockMs: Math.round(performance.now() - startedAt),
     attempts,
     assertions: assertionReports,
+    barriers: barrierReports,
     expectation,
     passed:
       harnessError === undefined &&
       cleanup.status !== "failed" &&
       meetsDeliveryExpectation(attempts, expectation.deliveries) &&
+      barrierReports.every((report) => report.status === "passed") &&
       assertionReports.every((report) => report.status === "passed"),
     ...(harnessError === undefined ? {} : { harnessError }),
     cleanup,
@@ -219,6 +306,54 @@ async function runTeardown(
 
 function indexEvents(events: readonly EventFixture[]): Map<string, EventFixture> {
   return new Map(events.map((event) => [event.id, event]));
+}
+
+/**
+ * Splits a plan's attempts into phases, in ascending phase order.
+ *
+ * Attempts are already grouped by phase in plan order, but grouping explicitly
+ * means a hand-edited or older saved plan cannot interleave phases by accident.
+ */
+function groupByPhase(
+  attempts: readonly DeliveryAttempt[],
+): Map<number, DeliveryAttempt[]> {
+  const phases = new Map<number, DeliveryAttempt[]>();
+  for (const attempt of attempts) {
+    const phase = attempt.phase ?? 0;
+    const existing = phases.get(phase);
+    if (existing === undefined) {
+      phases.set(phase, [attempt]);
+    } else {
+      existing.push(attempt);
+    }
+  }
+  return new Map([...phases.entries()].sort(([a], [b]) => a - b));
+}
+
+/**
+ * Rejects a barrier whose checkpoint the caller did not supply.
+ *
+ * Checked before setup rather than when the barrier is reached: discovering a
+ * typo in a hook name after thirty seconds of deliveries, with the application
+ * already in a modified state, is a much worse experience than failing
+ * immediately.
+ */
+function assertCheckpointsExist(plan: DeliveryPlan, hooks: RunOptions["hooks"]): void {
+  for (const barrier of plan.barriers) {
+    if (barrier.checkpoint === undefined) {
+      continue;
+    }
+    if (typeof hooks?.checkpoints?.[barrier.checkpoint] !== "function") {
+      const available = Object.keys(hooks?.checkpoints ?? {});
+      throw new HarnessError(
+        "InvalidScenario",
+        `barrier "${barrier.name}" waits for checkpoint "${barrier.checkpoint}", which is ` +
+          `not defined in hooks.checkpoints` +
+          (available.length === 0 ? "" : ` (available: ${available.join(", ")})`),
+        "hooks.checkpoints",
+      );
+    }
+  }
 }
 
 function byteLength(body: string | Uint8Array | undefined): number {

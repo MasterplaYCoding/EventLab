@@ -109,9 +109,31 @@ export function burst(): Transform {
   };
 }
 
+export interface FinaliseOptions {
+  /** Phase these attempts belong to. */
+  readonly phase: number;
+  /** Plan order to start numbering from, so phases stay contiguous. */
+  readonly orderBase: number;
+  /**
+   * Attempts already finalised in earlier phases.
+   *
+   * Copy numbering continues across phases, because attempt ids have to be
+   * unique across the whole plan — an event delivered before and after a
+   * barrier would otherwise produce two attempts called `evt_a#0`.
+   */
+  readonly existing: readonly DeliveryAttempt[];
+}
+
 /** Assigns final ids and plan order to a finished draft list. */
-export function finalise(drafts: readonly AttemptDraft[]): DeliveryAttempt[] {
+export function finalise(
+  drafts: readonly AttemptDraft[],
+  options: FinaliseOptions,
+): DeliveryAttempt[] {
   const seen = new Map<string, number>();
+  for (const attempt of options.existing) {
+    seen.set(attempt.eventId, Math.max(seen.get(attempt.eventId) ?? 0, attempt.copyIndex + 1));
+  }
+
   return drafts.map((draft, index) => {
     // A transform chain can produce the same (eventId, copyIndex) pair twice -
     // duplicate() applied twice, for instance. Re-index rather than emitting a
@@ -122,8 +144,9 @@ export function finalise(drafts: readonly AttemptDraft[]): DeliveryAttempt[] {
       attemptId: `${draft.eventId}#${nextCopy}`,
       eventId: draft.eventId,
       copyIndex: nextCopy,
-      order: index,
+      order: options.orderBase + index,
       delayMs: draft.delayMs,
+      phase: options.phase,
     };
   });
 }

@@ -6,7 +6,7 @@
  * project already has.
  */
 
-export { createPlan, type CreatePlanOptions } from "./plan/createPlan.js";
+export { createPlan, type CreatePlanOptions, type PlanPhase } from "./plan/createPlan.js";
 export {
   burst,
   delay,
@@ -37,6 +37,7 @@ export type {
   AssertionContext,
   AssertionReport,
   AttemptReport,
+  BarrierReport,
   CheckAssertion,
   DeliveryAttempt,
   DeliveryExpectation,
@@ -46,6 +47,7 @@ export type {
   EventuallyAssertion,
   HttpRequestSpec,
   HttpTarget,
+  PlanBarrier,
   RequestContext,
   RunLimits,
   RunOptions,

@@ -2,21 +2,58 @@ import { createRng } from "../internal/random.js";
 import { fixtureDigest } from "../internal/digest.js";
 import { HarnessError } from "../errors.js";
 import { PLANNER_VERSION } from "../version.js";
-import type { DeliveryPlan, EventFixture } from "../types.js";
+import type { DeliveryAttempt, DeliveryPlan, EventFixture, PlanBarrier } from "../types.js";
 import { finalise, type AttemptDraft, type Transform } from "./transforms.js";
 
 const MAX_EVENT_ID_LENGTH = 200;
 const DEFAULT_CONCURRENCY = 4;
 
+/** One group of deliveries, or a barrier between two groups. */
+export type PlanPhase =
+  | {
+      /** Ids of the events delivered in this phase. Must exist in `events`. */
+      readonly deliver: readonly string[];
+      /** Applied to this phase only, in declaration order. */
+      readonly transforms?: readonly Transform[];
+    }
+  | {
+      /**
+       * A synchronisation point. Everything before it completes before
+       * anything after it is released.
+       */
+      readonly barrier: string;
+      /** Key in `ScenarioHooks.checkpoints`, awaited when the barrier is hit. */
+      readonly checkpoint?: string;
+    };
+
 export interface CreatePlanOptions {
   /** Names the scenario in reports. Defaults to `"scenario"`. */
   readonly scenario?: string;
+  /** Every fixture the scenario can deliver. */
   readonly events: readonly EventFixture[];
   /** Any 32-bit integer. The same seed and inputs always expand identically. */
   readonly seed: number;
-  /** Applied in declaration order. */
+  /**
+   * Applied to all events, in declaration order.
+   *
+   * Mutually exclusive with {@link phases}: a single-phase plan is the common
+   * case and does not need the ceremony.
+   */
   readonly transforms?: readonly Transform[];
-  /** Maximum attempts in flight at once. Defaults to 4. */
+  /**
+   * Ordered phases and barriers, for scenarios that need a synchronisation
+   * point partway through.
+   *
+   * ```ts
+   * phases: [
+   *   { deliver: ["evt_payment"], transforms: [duplicate({ copies: 3 })] },
+   *   { barrier: "worker drained", checkpoint: "drainWorker" },
+   *   { deliver: ["evt_refund"] },
+   * ]
+   * ```
+   */
+  readonly phases?: readonly PlanPhase[];
+  /** Maximum attempts in flight at once, within a phase. Defaults to 4. */
   readonly concurrency?: number;
 }
 
@@ -32,7 +69,8 @@ export function createPlan(options: CreatePlanOptions): DeliveryPlan {
     scenario = "scenario",
     events,
     seed,
-    transforms = [],
+    transforms,
+    phases,
     concurrency = DEFAULT_CONCURRENCY,
   } = options;
 
@@ -40,16 +78,72 @@ export function createPlan(options: CreatePlanOptions): DeliveryPlan {
   validateConcurrency(concurrency);
   validateEvents(events);
 
-  const rng = createRng(seed);
-  let drafts: AttemptDraft[] = events.map((event) => ({
-    eventId: event.id,
-    copyIndex: 0,
-    delayMs: 0,
-  }));
+  if (phases !== undefined && transforms !== undefined) {
+    throw new HarnessError(
+      "InvalidScenario",
+      "pass either transforms (one phase) or phases (several), not both",
+      "phases",
+    );
+  }
 
-  for (const [index, transform] of transforms.entries()) {
-    drafts = transform.apply(drafts, rng);
-    assertDraftsReferenceKnownEvents(drafts, events, transform.record.kind, index);
+  const declared: readonly PlanPhase[] =
+    phases ?? [{ deliver: events.map((event) => event.id), ...(transforms ? { transforms } : {}) }];
+
+  if (declared.length === 0) {
+    throw new HarnessError("InvalidScenario", "a scenario needs at least one phase", "phases");
+  }
+
+  const rng = createRng(seed);
+  const known = new Set(events.map((event) => event.id));
+  const attempts: DeliveryAttempt[] = [];
+  const barriers: PlanBarrier[] = [];
+  const recordedTransforms = [];
+
+  let phaseIndex = 0;
+  let orderBase = 0;
+  let delivered = false;
+
+  for (const [index, phase] of declared.entries()) {
+    if ("barrier" in phase) {
+      validateBarrier(phase, index, delivered, barriers);
+      barriers.push({
+        name: phase.barrier,
+        // A barrier follows the phase currently being filled, and the next
+        // delivery phase begins after it.
+        afterPhase: phaseIndex,
+        ...(phase.checkpoint === undefined ? {} : { checkpoint: phase.checkpoint }),
+      });
+      phaseIndex += 1;
+      delivered = false;
+      continue;
+    }
+
+    validateDeliverList(phase.deliver, known, index);
+
+    let drafts: AttemptDraft[] = phase.deliver.map((eventId) => ({
+      eventId,
+      copyIndex: 0,
+      delayMs: 0,
+    }));
+
+    for (const [step, transform] of (phase.transforms ?? []).entries()) {
+      drafts = transform.apply(drafts, rng);
+      assertDraftsAreValid(drafts, known, transform.record.kind, `phases[${index}].transforms[${step}]`);
+      recordedTransforms.push(transform.record);
+    }
+
+    const finalised = finalise(drafts, { phase: phaseIndex, orderBase, existing: attempts });
+    attempts.push(...finalised);
+    orderBase += finalised.length;
+    delivered = true;
+  }
+
+  if (attempts.length === 0) {
+    throw new HarnessError(
+      "InvalidScenario",
+      "a scenario must deliver at least one event",
+      "phases",
+    );
   }
 
   return {
@@ -58,9 +152,77 @@ export function createPlan(options: CreatePlanOptions): DeliveryPlan {
     seed,
     fixtureDigest: fixtureDigest(events),
     concurrency,
-    transforms: transforms.map((transform) => transform.record),
-    attempts: finalise(drafts),
+    transforms: recordedTransforms,
+    attempts,
+    barriers,
   };
+}
+
+function validateBarrier(
+  phase: { readonly barrier: string; readonly checkpoint?: string },
+  index: number,
+  delivered: boolean,
+  existing: readonly PlanBarrier[],
+): void {
+  const at = `phases[${index}]`;
+
+  if (typeof phase.barrier !== "string" || phase.barrier.trim().length === 0) {
+    throw new HarnessError("InvalidScenario", "a barrier needs a non-empty name", at);
+  }
+  if (existing.some((barrier) => barrier.name === phase.barrier)) {
+    // Barriers are reported by name, so duplicates would make a report
+    // ambiguous about which one was reached.
+    throw new HarnessError(
+      "InvalidScenario",
+      `duplicate barrier name "${phase.barrier}"`,
+      at,
+    );
+  }
+  if (!delivered) {
+    // A barrier with nothing before it waits for nothing, and two in a row is
+    // almost always a mistake in how the phases were written.
+    throw new HarnessError(
+      "InvalidScenario",
+      `barrier "${phase.barrier}" has no deliveries before it to wait for`,
+      at,
+    );
+  }
+  if (phase.checkpoint !== undefined && phase.checkpoint.length === 0) {
+    throw new HarnessError("InvalidScenario", "checkpoint names must be non-empty", at);
+  }
+}
+
+function validateDeliverList(
+  deliver: readonly string[],
+  known: ReadonlySet<string>,
+  index: number,
+): void {
+  const at = `phases[${index}].deliver`;
+
+  if (!Array.isArray(deliver) || deliver.length === 0) {
+    throw new HarnessError("InvalidScenario", "a delivery phase needs at least one event", at);
+  }
+
+  const seen = new Set<string>();
+  for (const eventId of deliver) {
+    if (!known.has(eventId)) {
+      throw new HarnessError(
+        "InvalidScenario",
+        `phase delivers unknown event "${eventId}"; add it to events`,
+        at,
+      );
+    }
+    if (seen.has(eventId)) {
+      // Deliver it twice with duplicate({ copies: 2 }), which records the
+      // intent in the plan; listing it twice hides that.
+      throw new HarnessError(
+        "InvalidScenario",
+        `event "${eventId}" is listed twice in one phase; use duplicate() instead`,
+        at,
+      );
+    }
+    seen.add(eventId);
+  }
 }
 
 function validateSeed(seed: number): void {
@@ -113,26 +275,25 @@ function validateEvents(events: readonly EventFixture[]): void {
   }
 }
 
-function assertDraftsReferenceKnownEvents(
+function assertDraftsAreValid(
   drafts: readonly AttemptDraft[],
-  events: readonly EventFixture[],
+  known: ReadonlySet<string>,
   kind: string,
-  index: number,
+  at: string,
 ): void {
-  const known = new Set(events.map((event) => event.id));
   for (const draft of drafts) {
     if (!known.has(draft.eventId)) {
       throw new HarnessError(
         "InvalidPlan",
         `transform "${kind}" produced an attempt for unknown event "${draft.eventId}"`,
-        `transforms[${index}]`,
+        at,
       );
     }
     if (!Number.isInteger(draft.delayMs) || draft.delayMs < 0) {
       throw new HarnessError(
         "InvalidPlan",
         `transform "${kind}" produced a negative or non-integer delay`,
-        `transforms[${index}]`,
+        at,
       );
     }
   }

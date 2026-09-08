@@ -3,8 +3,10 @@ import type { DeliveryAttempt } from "../types.js";
 export interface ScheduleOptions {
   readonly attempts: readonly DeliveryAttempt[];
   readonly concurrency: number;
-  /** Monotonic reading, in milliseconds, for the start of the run. */
+  /** Monotonic reading, in milliseconds, for the start of this phase. */
   readonly startedAt: number;
+  /** Elapsed milliseconds since the run began, for reporting. */
+  readonly runStartedAt: number;
   readonly signal: AbortSignal;
   /** Invoked once per attempt, at its release point. */
   readonly execute: (attempt: DeliveryAttempt, observedStartMs: number) => Promise<void>;
@@ -30,7 +32,7 @@ export interface ScheduleOptions {
  * run did.
  */
 export async function schedule(options: ScheduleOptions): Promise<void> {
-  const { concurrency, startedAt, signal, execute } = options;
+  const { concurrency, startedAt, runStartedAt, signal, execute } = options;
 
   const ordered = [...options.attempts].sort(
     (a, b) => a.delayMs - b.delayMs || a.order - b.order,
@@ -52,7 +54,9 @@ export async function schedule(options: ScheduleOptions): Promise<void> {
       break;
     }
 
-    const observedStartMs = performance.now() - startedAt;
+    // Reported relative to the run, not the phase, so a report reads as one
+    // timeline even when barriers restarted the offset clock.
+    const observedStartMs = performance.now() - runStartedAt;
     const running = execute(attempt, observedStartMs).finally(() => {
       inFlight.delete(running);
     });

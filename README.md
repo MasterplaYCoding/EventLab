@@ -83,7 +83,7 @@ assertRunPassed(report);   // throws with the block below
   expected 2 fulfilment writes, found 3
 
   9 deliveries, all 200 OK
-  seed 20260908 · planner 1 · fixtures sha256:603b…
+  seed 20260908 · planner 2 · fixtures sha256:603b…
 ```
 
 ### The fix, and the same test passing

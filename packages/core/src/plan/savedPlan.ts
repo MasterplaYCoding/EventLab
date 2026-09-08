@@ -69,6 +69,29 @@ export function parsePlan(source: string): DeliveryPlan {
     }
   }
 
+  if (plan.barriers !== undefined) {
+    if (!Array.isArray(plan.barriers)) {
+      throw new HarnessError("InvalidPlan", "barriers must be an array", "barriers");
+    }
+    const phases = new Set(plan.attempts.map((attempt) => attempt.phase ?? 0));
+    for (const [index, barrier] of plan.barriers.entries()) {
+      const at = `barriers[${index}]`;
+      requireString(barrier?.name, `${at}.name`);
+      if (!Number.isInteger(barrier.afterPhase) || barrier.afterPhase < 0) {
+        throw new HarnessError("InvalidPlan", "barrier afterPhase must be a phase index", at);
+      }
+      // A barrier separating nothing from nothing would silently do nothing at
+      // run time, which is a saved plan that no longer means what it says.
+      if (!phases.has(barrier.afterPhase)) {
+        throw new HarnessError(
+          "InvalidPlan",
+          `barrier "${barrier.name}" follows phase ${barrier.afterPhase}, which has no attempts`,
+          at,
+        );
+      }
+    }
+  }
+
   if (plan.plannerVersion !== PLANNER_VERSION) {
     throw new HarnessError(
       "InvalidPlan",

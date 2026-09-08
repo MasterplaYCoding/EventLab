@@ -31,8 +31,8 @@ const ok = (index: number, status = 200): AttemptReport =>
 
 function report(overrides: Partial<RunReport> = {}): RunReport {
   return {
-    reportSchemaVersion: "1",
-    plannerVersion: "1",
+    reportSchemaVersion: "2",
+    plannerVersion: "2",
     scenario: "example",
     seed: 20260908,
     fixtureDigest: "sha256:8f2bcafe000000000000000000000000000000000000000000000000000000ff",
@@ -42,6 +42,7 @@ function report(overrides: Partial<RunReport> = {}): RunReport {
     wallClockMs: 42,
     attempts: [],
     assertions: [],
+    barriers: [],
     expectation: { deliveries: "all-2xx" },
     passed: true,
     cleanup: { status: "ok" },
@@ -84,7 +85,7 @@ describe("formatReport", () => {
         "  expected 2 fulfilment writes, found 3",
         "",
         "  9 deliveries, all 200 OK",
-        "  seed 20260908 · planner 1 · fixtures sha256:8f2b…",
+        "  seed 20260908 · planner 2 · fixtures sha256:8f2b…",
       ].join("\n"),
     );
   });

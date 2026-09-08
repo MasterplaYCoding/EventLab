@@ -1,4 +1,4 @@
-import type { AssertionReport, RunReport } from "../types.js";
+import type { AssertionReport, BarrierReport, RunReport } from "../types.js";
 import { summariseStatuses } from "./summary.js";
 
 export interface FormatReportOptions {
@@ -46,6 +46,12 @@ export function formatReport(report: RunReport, options: FormatReportOptions = {
     return lines.join("\n");
   }
 
+  // Defensive: formatReport is a display function, and a report deserialised
+  // from an older schema should degrade rather than crash.
+  for (const barrier of report.barriers ?? []) {
+    lines.push(...formatBarrier(barrier));
+  }
+
   if (report.assertions.length === 0) {
     lines.push("· no assertions declared");
   } else {
@@ -69,6 +75,24 @@ export function formatReport(report: RunReport, options: FormatReportOptions = {
   }
 
   return lines.join("\n");
+}
+
+function formatBarrier(barrier: BarrierReport): string[] {
+  const waited =
+    barrier.checkpoint === undefined ? "" : ` (waited for ${barrier.checkpoint})`;
+
+  if (barrier.status === "passed") {
+    return [`⏸ barrier "${barrier.name}" after ${barrier.attemptsBefore} deliveries${waited}`];
+  }
+  if (barrier.status === "skipped") {
+    // A run that ended early never reached this one; saying so is better than
+    // leaving a gap the reader has to notice for themselves.
+    return [`⏸ barrier "${barrier.name}" not reached`];
+  }
+  return [
+    `✗ barrier "${barrier.name}"${waited}`,
+    `  ${barrier.message ?? "the checkpoint failed"}`,
+  ];
 }
 
 function formatAssertion(assertion: AssertionReport): string[] {
