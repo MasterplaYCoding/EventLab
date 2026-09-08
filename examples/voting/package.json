@@ -1,0 +1,11 @@
+{
+  "name": "@masterplaycoding/eventlab-example-voting",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A poll voting endpoint adapted from GOATalking, in vulnerable and corrected form.",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@masterplaycoding/eventlab": "*"
+  }
+}
