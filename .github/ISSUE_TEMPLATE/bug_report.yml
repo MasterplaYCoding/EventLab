@@ -1,0 +1,32 @@
+name: Bug report
+description: Something in EventLab behaves incorrectly.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If you found a bug in *your own* application using EventLab, that is
+        great, but it is not an issue here. This form is for bugs in EventLab.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: Serialised plan
+      description: |
+        Output of `serializePlan(plan)`. It contains delivery instructions
+        only - no fixture payloads - so it is safe to paste publicly.
+      render: json
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: EventLab version, planner version, Node version, OS.
+      placeholder: "eventlab 0.1.0, planner 1, node 22.14.0, Windows 11"
+    validations:
+      required: true

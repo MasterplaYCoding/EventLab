@@ -6,6 +6,7 @@ import { burst, delay, duplicate, shuffle } from "../src/plan/transforms.js";
 import { HarnessError } from "../src/errors.js";
 import { PLANNER_VERSION } from "../src/version.js";
 import type { EventFixture } from "../src/types.js";
+import { propertyConfig } from "./support/property.js";
 
 const events: EventFixture[] = [
   { id: "evt_a", body: { order: "ord_1", version: 1 } },
@@ -124,6 +125,7 @@ describe("planner properties", () => {
 
         expect(build()).toEqual(build());
       }),
+      propertyConfig,
     );
   });
 
@@ -147,6 +149,7 @@ describe("planner properties", () => {
           count(ordered.attempts.map((a) => a.eventId)),
         );
       }),
+      propertyConfig,
     );
   });
 
@@ -172,6 +175,7 @@ describe("planner properties", () => {
           }
         },
       ),
+      propertyConfig,
     );
   });
 
@@ -185,6 +189,7 @@ describe("planner properties", () => {
         });
         expect(new Set(plan.attempts.map((a) => a.attemptId)).size).toBe(plan.attempts.length);
       }),
+      propertyConfig,
     );
   });
 });

@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # A weekly broader property-test sweep. Pull requests run fixed seeds so
+    # they are reproducible; this run varies them to find what fixed seeds miss.
+    - cron: "17 4 * * 1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: ["22", "24"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit and example tests
+        run: npm test
+
+      # The real gate: does the thing we would publish work for someone who
+      # installs it? Runs on every platform, because packaging bugs are
+      # frequently platform-specific.
+      - name: Verify packaged install and README example
+        run: npm run verify:packaged
+
+  property-sweep:
+    name: property sweep (varied seeds)
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - name: Planner properties with many runs
+        env:
+          # fast-check reads this to widen the search beyond the PR default.
+          EVENTLAB_PROPERTY_RUNS: "2000"
+        run: npx vitest run packages/core/test/createPlan.test.ts
+
+      - name: Retain counterexamples
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-failures
+          path: |
+            **/*.log
+            packages/core/test/**/__counterexamples__/**
+          if-no-files-found: ignore
+          retention-days: 30
