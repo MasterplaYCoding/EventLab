@@ -1,0 +1,11 @@
+{
+  "name": "@masterplaycoding/eventlab-example-duplicate-handler",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A payment webhook handler that double-fulfils orders, and the corrected version.",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@masterplaycoding/eventlab": "*"
+  }
+}
