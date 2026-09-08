@@ -7,11 +7,15 @@ between minor versions; each change will be listed here with a migration note.
 
 ## [Unreleased]
 
-Working toward `0.1.0`, the first published release. See
+Working toward `0.2.0`, the first published release. Publication is held until
+the barrier API has settled, since a registry version is permanent. See
 [RELEASING.md](RELEASING.md).
 
 ### Fixed
 
+- **An already-aborted `AbortSignal` was ignored.** A signal fires its event
+  once, so subscribing alone meant a caller who had already cancelled got the
+  entire scenario executed anyway. Found while testing barriers.
 - **The README printed a failure block no code could produce.** Every fact in
   it was verified; the rendering was typeset by hand. `formatReport` now
   produces it, and the acceptance fixture asserts its output equals the block
@@ -30,6 +34,14 @@ Working toward `0.1.0`, the first published release. See
 
 ### Added
 
+- **Barriers.** `createPlan({ phases })` splits a plan at synchronisation
+  points: everything before a barrier completes before anything after it is
+  released, and a named checkpoint in `hooks.checkpoints` runs in between.
+  This is the constructive answer to docs/decisions/001 - a scenario waits for
+  a signal the application emits rather than for a duration somebody guessed.
+- `examples/barrier-settlement`: a refund that must not be applied before its
+  payment has settled. Needs a barrier to test at all, because "what is true
+  after the worker finishes" cannot be asked by waiting longer.
 - `formatReport(report, options?)`: renders a report as text. Pure, returns a
   string, no TTY assumptions.
 - `assertRunPassed(report)`: throws with the formatted report as its message,
@@ -39,6 +51,12 @@ Working toward `0.1.0`, the first published release. See
   quickstart section on getting an application onto loopback.
 - npm publishing with provenance, a tagged release workflow, a release version
   guard, and [RELEASING.md](RELEASING.md).
+
+### Changed
+
+- `PLANNER_VERSION` and `REPORT_SCHEMA_VERSION` are both `2`.
+  `DeliveryAttempt` gained `phase`, and plans and reports gained `barriers`.
+  Saved version-1 plans are refused with the message that mechanism exists for.
 
 ### Previously added, toward the 0.1 engineering gate
 

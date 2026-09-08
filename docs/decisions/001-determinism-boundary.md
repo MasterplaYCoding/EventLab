@@ -87,9 +87,44 @@ Sleep-based coordination is rejected in both cases. `await sleep(50)` between
 deliveries encodes an assumption about your CI machine's speed and nothing
 about your system's semantics.
 
-The `0.2` barrier and checkpoint work generalises the second option: a named
-point the application signals, and a scenario that waits for the signal rather
-than for a duration.
+## Barriers: the general form of the second option
+
+The voting example's gate is bespoke to that example. **Barriers** are the same
+idea in the library, and they answer a question the gate cannot: *what is true
+once the system has gone quiet?*
+
+```ts
+phases: [
+  { deliver: ["evt_payment"], transforms: [duplicate({ copies: 2 })] },
+  { barrier: "settlement drained", checkpoint: "settlementDrained" },
+  { deliver: ["evt_refund"] },
+]
+```
+
+Everything in the first phase completes, then the checkpoint runs, then the
+second phase is released. The checkpoint is *the application's* — a queue-depth
+poll, a `waitForIdle`, a test-only hook. The scenario waits for a signal the
+system emits, never for a duration a human guessed.
+
+That distinction is the whole point. `await sleep(200)` and "wait until the
+worker's queue is empty" look similar in a test file and are not remotely the
+same claim: the first is true on your laptop and false on a loaded CI runner,
+while the second is true wherever it runs.
+
+What barriers make possible that nothing else does is **testing the two sides
+of a boundary separately**. `examples/barrier-settlement` has a refund that
+must not be applied before its payment settles, and it needs both:
+
+- *without* a barrier, both events land together and the correct handler must
+  refuse the refund with a `409`;
+- *with* one, the refund arrives after settlement and must succeed.
+
+No arrangement of delays expresses the second. You cannot ask "what happens
+after the worker finishes?" by waiting longer, because waiting longer is a
+guess and a guess is not a test.
+
+Barriers do not make execution deterministic. Within a phase, everything in
+this document still applies.
 
 ## What the report tells you about this
 

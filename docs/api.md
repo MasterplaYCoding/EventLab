@@ -12,10 +12,60 @@ covers the same surface in more detail; this page is the map.
 | `events` | yes | — | The fixtures. At least one, with unique ids not containing `#`. |
 | `seed` | yes | — | Any integer. The same seed and inputs always expand identically. |
 | `scenario` | no | `"scenario"` | Names the run in reports. |
-| `transforms` | no | `[]` | Applied in declaration order. |
-| `concurrency` | no | `4` | Maximum attempts in flight. |
+| `transforms` | no | `[]` | Applied to all events, in declaration order. |
+| `phases` | no | — | Ordered delivery groups and barriers. Mutually exclusive with `transforms`. |
+| `concurrency` | no | `4` | Maximum attempts in flight, within a phase. |
 
 Only `events` and `seed` are required, despite every example passing more.
+
+### Barriers and phases
+
+A barrier splits a plan. Everything before it completes before anything after
+it is released, and a named checkpoint runs in between:
+
+```ts
+const plan = createPlan({
+  events,
+  seed: 4242,
+  phases: [
+    { deliver: ["evt_payment"], transforms: [duplicate({ copies: 2 })] },
+    { barrier: "settlement drained", checkpoint: "settlementDrained" },
+    { deliver: ["evt_refund"] },
+  ],
+});
+
+await runPlan(plan, {
+  events,
+  target,
+  hooks: {
+    checkpoints: {
+      // Your application says when it is quiescent. Not a sleep.
+      settlementDrained: () => app.waitForQueueIdle(),
+    },
+  },
+});
+```
+
+Rules, all enforced when the plan is built:
+
+- A barrier must have deliveries before it. Two in a row, or one at the start,
+  is rejected — each is a scenario that cannot mean what it says.
+- Barrier names are unique, because reports identify them by name.
+- A phase may not list the same event twice; use `duplicate()`, which records
+  the intent in the plan.
+- Checkpoint names are validated against `hooks.checkpoints` **before setup**,
+  so a typo fails before anything is delivered rather than thirty seconds in.
+
+Delay offsets are **phase-relative**: a barrier resets the clock, since what
+follows one did not start until what preceded it finished. Observed start times
+in the report stay run-relative, so it still reads as a single timeline.
+
+A failing checkpoint stops the run — the application has said it never reached
+the state the remaining phases assume. Barriers a run never reached are
+reported as `skipped`, so a truncated run is visibly truncated.
+
+See [`examples/barrier-settlement`](../examples/barrier-settlement) for a
+refund that must not be applied before its payment has settled.
 
 ### Transforms
 

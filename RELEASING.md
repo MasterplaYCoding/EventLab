@@ -27,7 +27,7 @@ be bootstrapped:
    (Settings → Environments → New environment), not as a plain repository
    secret. An environment can require your approval before the job runs and
    keeps the token out of every other workflow.
-3. Publish `0.1.0`.
+3. Publish `0.2.0`.
 4. Then configure the trusted publisher: npmjs.com → the package → Settings →
    Trusted Publisher → GitHub Actions, repository `MasterplaYCoding/EventLab`,
    workflow `release.yml`, environment `npm-publish`.
@@ -40,7 +40,7 @@ workflow's OIDC claims, not from how the publish authenticated.
 
 1. Set the version in `packages/core/package.json`.
 
-2. Add a `## [0.1.0] - YYYY-MM-DD` section to `CHANGELOG.md`. The release
+2. Add a `## [0.2.0] - YYYY-MM-DD` section to `CHANGELOG.md`. The release
    workflow refuses to publish without one.
 
 3. Verify locally, exactly as CI will:
@@ -59,7 +59,7 @@ workflow's OIDC claims, not from how the publish authenticated.
 5. Commit, tag and push:
 
    ```bash
-   git tag v0.1.0 && git push origin main v0.1.0
+   git tag v0.2.0 && git push origin main v0.2.0
    ```
 
 6. The `Release` workflow checks the tag against the package version and the

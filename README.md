@@ -167,6 +167,9 @@ cd EventLab && npm ci && npm test
   bug, in broken and corrected form.
 - [`examples/voting`](examples/voting) — a genuinely concurrent bug, adapted
   from a real project, demonstrated without hoping for a race.
+- [`examples/barrier-settlement`](examples/barrier-settlement) — a refund that
+  must not be applied before its payment settles, which needs a barrier to
+  test at all.
 
 ## Five-minute quickstart
 
@@ -195,14 +198,15 @@ ends up in*.
 | A delivery timeout is reported as a timeout, with the elapsed time. | A timeout is **not** evidence the server did not commit the write. See [docs/decisions/002-timeouts-prove-nothing.md](docs/decisions/002-timeouts-prove-nothing.md). |
 | Reports never contain request bodies, and record request header *names* only. | Response body previews are captured (bounded, 64 KiB by default). If your target echoes secrets, redact them in your own handler. |
 | Deliveries go to loopback only. | Set `allowRemoteTargets: true` to override — deliberately explicit, because duplicating and bursting traffic at a shared host is not something to do by accident. |
-| A saved plan replays the same instructions, and refuses to run against edited fixtures or a different planner version. | It cannot reproduce a race that depended on machine timing. Use explicit checkpoints for that. |
+| A saved plan replays the same instructions, and refuses to run against edited fixtures or a different planner version. | It cannot reproduce a race that depended on machine timing. Use a barrier and a checkpoint for that. |
+| A barrier releases nothing from a later phase until every attempt in the earlier one has settled, and its checkpoint has run. | Within a phase, ordering is still the network and your application's to decide. A barrier bounds a run into stages; it does not make a stage deterministic. |
 
 ## Roadmap
 
 | Milestone | Contents | State |
 |---|---|---|
 | `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples | **implemented** |
-| `0.2` | Explicit barriers, an example only a barrier can reproduce, and the first npm release | next |
+| `0.2` | Explicit barriers, an example only a barrier can reproduce, and the first npm release | **implemented**, release pending |
 | `0.3` | Controlled restart hooks, PostgreSQL inbox/outbox example, CLI, static HTML report | planned |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
 

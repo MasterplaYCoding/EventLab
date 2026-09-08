@@ -3,6 +3,7 @@
   "references": [
     { "path": "./packages/core" },
     { "path": "./examples/duplicate-handler" },
-    { "path": "./examples/voting" }
+    { "path": "./examples/voting" },
+    { "path": "./examples/barrier-settlement" }
   ]
 }
