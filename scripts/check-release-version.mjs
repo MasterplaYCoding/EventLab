@@ -62,7 +62,39 @@ if (pinned !== expected) {
   );
 }
 
-console.log(`✓ ${tag} matches both packages at ${manifest.version}, with a changelog entry`);
+// Every file a package promises to ship has to exist. `files` is an allowlist,
+// and npm does not warn about an entry that matches nothing - it simply packs
+// one file fewer. Both packages listed a LICENSE neither of them had, so an
+// MIT-licensed library was about to be published with no licence text in the
+// tarball, and the CLI listed a README that did not exist, which renders its
+// registry page blank.
+const rootLicence = await readFile(resolve(repoRoot, "LICENSE"), "utf8");
+
+for (const workspace of ["packages/core", "packages/cli"]) {
+  const packaged = JSON.parse(
+    await readFile(resolve(repoRoot, workspace, "package.json"), "utf8"),
+  );
+
+  for (const entry of packaged.files ?? []) {
+    if (entry === "dist") continue; // a directory, produced by the build
+    const contents = await readFile(resolve(repoRoot, workspace, entry), "utf8").catch(
+      () => undefined,
+    );
+    if (contents === undefined) {
+      fail(`${workspace}/package.json lists "${entry}" in files, but there is no such file`);
+    }
+    // A per-package copy can drift from the licence the repository actually
+    // grants, which is worse than not shipping one at all.
+    if (entry === "LICENSE" && contents !== rootLicence) {
+      fail(`${workspace}/LICENSE differs from the repository's LICENSE`);
+    }
+  }
+}
+
+console.log(
+  `✓ ${tag} matches both packages at ${manifest.version}, with a changelog entry` +
+    " and every file they promise to ship",
+);
 
 function fail(message) {
   console.error(`✗ ${message}`);
