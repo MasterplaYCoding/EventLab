@@ -92,5 +92,5 @@ the barrier API has settled, since a registry version is permanent. See
 
 ### Not yet implemented
 
-Barriers and checkpoints, the PostgreSQL recovery example, the CLI and the HTML
-report. See the roadmap in the README.
+The CLI (`run`, `replay`, `report`) and the static HTML timeline report. See
+the roadmap in the README.
