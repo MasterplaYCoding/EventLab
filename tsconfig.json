@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/core" },
+    { "path": "./packages/cli" },
     { "path": "./examples/duplicate-handler" },
     { "path": "./examples/voting" },
     { "path": "./examples/barrier-settlement" },

@@ -34,6 +34,14 @@ the barrier API has settled, since a registry version is permanent. See
 
 ### Added
 
+- **`@masterplaycoding/eventlab-cli`**, a second published package:
+  `eventlab run` executes a scenario module, `eventlab replay` runs a saved
+  plan against one, and `eventlab report` renders a JSON report as a
+  standalone HTML timeline. Exit codes distinguish "your application failed"
+  (1) from "the scenario could not run" (2).
+- A static HTML timeline: one file, no server, no network, no analytics.
+  Response bodies are deliberately omitted even though the report holds them.
+
 - **Barriers.** `createPlan({ phases })` splits a plan at synchronisation
   points: everything before a barrier completes before anything after it is
   released, and a named checkpoint in `hooks.checkpoints` runs in between.
@@ -92,5 +100,5 @@ the barrier API has settled, since a registry version is permanent. See
 
 ### Not yet implemented
 
-The CLI (`run`, `replay`, `report`) and the static HTML timeline report. See
-the roadmap in the README.
+Controlled restart hooks, benchmarks, and recipes for unfamiliar frameworks.
+See the roadmap in the README.

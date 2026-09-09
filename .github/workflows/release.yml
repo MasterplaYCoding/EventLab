@@ -46,7 +46,14 @@ jobs:
       - name: Verify packaged install and README example
         run: npm run verify:packaged
 
-      - name: Publish
+      # Order matters: the CLI depends on the core package at an exact
+      # version, so the core has to exist on the registry first.
+      - name: Publish the library
         run: npm publish --provenance --access public --workspace @masterplaycoding/eventlab
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish the CLI
+        run: npm publish --provenance --access public --workspace @masterplaycoding/eventlab-cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -209,13 +209,14 @@ ends up in*.
 | Milestone | Contents | State |
 |---|---|---|
 | `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples | **implemented** |
-| `0.2` | Explicit barriers, a barrier-only example, and durable inbox/outbox crash recovery | **implemented**, release pending |
-| `0.3` | CLI (`run`, `replay`, `report`) and a static HTML timeline report | next |
+| `0.2` | Explicit barriers, a barrier-only example, durable inbox/outbox crash recovery, and the `eventlab` CLI with an HTML timeline | **implemented**, release pending |
+| `0.3` | Controlled restart hooks, benchmarks, recipes for unfamiliar frameworks | planned |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
 
 ## Documentation
 
 - [Quickstart](docs/quickstart.md) — including how to get your app onto loopback.
+- [The command line](docs/cli.md) — `run`, `replay`, `report`, and the HTML timeline.
 - [Concepts](docs/concepts.md)
 - [API reference](docs/api.md) — every export, the error codes, the limits.
 - [Troubleshooting](docs/troubleshooting.md) — start here when a run confuses you.

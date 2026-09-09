@@ -46,7 +46,23 @@ if (manifest.repository?.url?.includes("MasterplaYCoding/EventLab") !== true) {
   fail("packages/core/package.json is missing a repository url for provenance");
 }
 
-console.log(`✓ ${tag} matches version ${manifest.version} and has a changelog entry`);
+// The CLI pins the library at an exact version, so a release where the two
+// disagree would publish a CLI that cannot resolve its own dependency.
+const cli = JSON.parse(await readFile(resolve(repoRoot, "packages/cli/package.json"), "utf8"));
+
+if (cli.version !== expected) {
+  fail(`packages/cli is at ${cli.version}, but the tag says ${expected}`);
+}
+
+const pinned = cli.dependencies?.["@masterplaycoding/eventlab"];
+if (pinned !== expected) {
+  fail(
+    `packages/cli depends on eventlab@${pinned}, which is not the version ` +
+      `being released (${expected})`,
+  );
+}
+
+console.log(`✓ ${tag} matches both packages at ${manifest.version}, with a changelog entry`);
 
 function fail(message) {
   console.error(`✗ ${message}`);
