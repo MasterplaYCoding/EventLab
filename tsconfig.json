@@ -4,6 +4,7 @@
     { "path": "./packages/core" },
     { "path": "./examples/duplicate-handler" },
     { "path": "./examples/voting" },
-    { "path": "./examples/barrier-settlement" }
+    { "path": "./examples/barrier-settlement" },
+    { "path": "./examples/inbox-outbox" }
   ]
 }

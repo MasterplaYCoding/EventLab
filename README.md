@@ -156,7 +156,7 @@ surface and a registry version is permanent.
 
 ## Running the examples
 
-Both examples live in this repository and run from its root:
+All four examples live in this repository and run from its root:
 
 ```bash
 git clone https://github.com/MasterplaYCoding/EventLab.git
@@ -170,6 +170,9 @@ cd EventLab && npm ci && npm test
 - [`examples/barrier-settlement`](examples/barrier-settlement) — a refund that
   must not be applied before its payment settles, which needs a barrier to
   test at all.
+- [`examples/inbox-outbox`](examples/inbox-outbox) — durable inbox/outbox
+  processing that survives a worker killed mid-transaction. Uses `node:sqlite`,
+  built into Node, so it still needs no Docker and no install.
 
 ## Five-minute quickstart
 
@@ -206,8 +209,8 @@ ends up in*.
 | Milestone | Contents | State |
 |---|---|---|
 | `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples | **implemented** |
-| `0.2` | Explicit barriers, an example only a barrier can reproduce, and the first npm release | **implemented**, release pending |
-| `0.3` | Controlled restart hooks, PostgreSQL inbox/outbox example, CLI, static HTML report | planned |
+| `0.2` | Explicit barriers, a barrier-only example, and durable inbox/outbox crash recovery | **implemented**, release pending |
+| `0.3` | CLI (`run`, `replay`, `report`) and a static HTML timeline report | next |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
 
 ## Documentation

@@ -39,6 +39,10 @@ the barrier API has settled, since a registry version is permanent. See
   released, and a named checkpoint in `hooks.checkpoints` runs in between.
   This is the constructive answer to docs/decisions/001 - a scenario waits for
   a signal the application emits rather than for a duration somebody guessed.
+- `examples/inbox-outbox`: durable inbox/outbox processing that survives a
+  worker killed mid-transaction, on `node:sqlite` (built into Node 22+, so no
+  Docker and no install). Turns docs/decisions/003 from a design note into a
+  running example. The library still has no database dependency.
 - `examples/barrier-settlement`: a refund that must not be applied before its
   payment has settled. Needs a barrier to test at all, because "what is true
   after the worker finishes" cannot be asked by waiting longer.

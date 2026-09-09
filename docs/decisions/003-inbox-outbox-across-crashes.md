@@ -1,11 +1,24 @@
 # How inbox/outbox transactions behave across crashes
 
-This is the design for EventLab's `0.2` PostgreSQL example. It is written down
-now because the shape of the example constrains what the `0.2` API needs, and
-because the reasoning is the useful part regardless of when the code lands.
+This is the reasoning behind [`examples/inbox-outbox`](../../examples/inbox-outbox),
+which is implemented and runs in CI on every supported platform.
 
-> **Status:** design only. No PostgreSQL example is implemented yet. The
-> `0.1` examples are in-memory and need no database or Docker.
+> **On the database.** The example uses `node:sqlite`, built into Node 22+, so
+> it needs no install and no Docker — and the library itself still has no
+> database dependency of any kind.
+>
+> A database appears here for exactly one reason: this example demonstrates
+> **crash recovery**, and "the worker died mid-transaction, what state is the
+> system in?" requires storage that outlives the process. An in-memory store
+> dies *with* the process, so it cannot demonstrate recovery at all. Every
+> other example in this repository is in-memory precisely because they do not
+> need that.
+>
+> What SQLite cannot demonstrate is `SELECT … FOR UPDATE SKIP LOCKED` — several
+> workers competing for inbox rows. That is a scaling mechanism, not one of the
+> six failures below, and with a single worker a transaction is sufficient.
+> Where the text mentions it, treat it as describing what a Postgres deployment
+> would do rather than what the example runs.
 
 ## The problem
 
@@ -73,22 +86,32 @@ ordering contract: they are wall-clock readings from a distributed system, and
 Stripe in particular documents that ordering is not guaranteed. An example that
 implied otherwise would be teaching a bug.
 
-## How the scenario will be tested
+## How the scenario is tested
 
-Crash points are **explicit checkpoints**, not sleeps. The worker is started as
-a child process with an argument naming the boundary it should stop at; it
-reaches that boundary, signals, and exits. The scenario waits for the signal.
+Crash points are **named boundaries**, not sleeps. The worker takes a
+`crashAt` of `before-commit`, `after-commit` or `before-dispatch`, reaches
+exactly that point and throws. The test then drops its database handle and
+opens the file again, which is the part that matters: the state has to survive
+something, and a file is the smallest thing that survives.
 
 The alternative — sleeping and hoping to interrupt the right instruction — is
 rejected outright. It produces a test that passes for the wrong reason on a
 fast machine and fails intermittently on a slow one, and it cannot even be said
-to test the boundary it claims to.
+to test the boundary it claims to. This project has already made that mistake
+twice, in two different examples, and both times CI on another platform is what
+caught it.
 
-Process management belongs to the example's own utilities, using spawned child
-processes with argument arrays. EventLab's core invokes hooks and nothing else;
-it never manages processes on a user's behalf.
+Ordering between phases uses [barriers](../api.md#barriers-and-phases), so
+"deliver v1, wait until it is fully applied, then deliver v2" is a property of
+the scenario rather than a race. The broken handler's failure is a version
+regression, and a test that only caught it when the transport happened to
+cooperate would be worthless.
 
-## What this will not claim
+Process management, if a scenario needs a real child process rather than a
+named boundary, belongs to the example's own utilities. EventLab's core invokes
+hooks and nothing else; it never manages processes on a user's behalf.
+
+## What this does not claim
 
 - Not exactly-once delivery to external services.
 - Not power-loss durability. A killed process is not a lost machine, and the
