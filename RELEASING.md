@@ -21,16 +21,21 @@ npm's **trusted publishing** (OIDC) is the goal — no long-lived token at all �
 but it attaches to a package that already exists, so the first release has to
 be bootstrapped:
 
-1. Create a **granular access token** at npmjs.com, scoped to
-   `@masterplaycoding/eventlab` only, with write permission and a short expiry.
+1. Create a **granular access token** at npmjs.com with write permission, a
+   short expiry, and scope over the `@masterplaycoding` packages. It has to
+   cover both `eventlab` and `eventlab-cli`; neither exists yet, so scope it
+   to the whole scope rather than to packages by name.
 2. Add it as the `NPM_TOKEN` secret in a **`npm-publish` environment**
    (Settings → Environments → New environment), not as a plain repository
    secret. An environment can require your approval before the job runs and
    keeps the token out of every other workflow.
 3. Publish `0.2.0`.
-4. Then configure the trusted publisher: npmjs.com → the package → Settings →
-   Trusted Publisher → GitHub Actions, repository `MasterplaYCoding/EventLab`,
-   workflow `release.yml`, environment `npm-publish`.
+4. Then configure the trusted publisher, **once per package** - it is a
+   per-package setting, and forgetting the CLI leaves half the release still
+   depending on a token you are about to delete. For each of `eventlab` and
+   `eventlab-cli`: npmjs.com → the package → Settings → Trusted Publisher →
+   GitHub Actions, repository `MasterplaYCoding/EventLab`, workflow
+   `release.yml`, environment `npm-publish`.
 5. Delete the token and remove `NODE_AUTH_TOKEN` from `release.yml`.
 
 Provenance works either way — it comes from `id-token: write` and the
@@ -38,46 +43,72 @@ workflow's OIDC claims, not from how the publish authenticated.
 
 ## Releasing
 
-1. Set the version in `packages/core/package.json`.
+`0.2.0` is already prepared. Both packages are at that version, the CLI pins the
+library at it, the changelog has its section, and everything below except the
+tag has been run. What is left is the part that cannot be done without an
+account.
 
-2. Add a `## [0.2.0] - YYYY-MM-DD` section to `CHANGELOG.md`. The release
-   workflow refuses to publish without one.
-
-3. Verify locally, exactly as CI will:
+1. Verify locally, exactly as CI will:
 
    ```bash
    npm run typecheck && npm test && npm run verify:packaged
    ```
 
-4. Check what will actually ship — `files` is an allowlist, and it is easy to
+2. Check what will actually ship — `files` is an allowlist, and it is easy to
    publish either too little or a `node_modules`:
 
    ```bash
    npm pack --dry-run --workspace @masterplaycoding/eventlab
    ```
 
-5. Commit, tag and push:
+   ```bash
+   npm pack --dry-run --workspace @masterplaycoding/eventlab-cli
+   ```
+
+3. Make the claims that are only true on the day true:
+
+   - replace `unreleased` on the `## [0.2.0]` heading in `CHANGELOG.md` with
+     the date;
+   - in `README.md`, delete the *Why not `npm install …`?* section and put the
+     registry install above the build-from-source one, which stays — it is how
+     anyone works on the library rather than with it;
+   - delete the **Not on npm yet** notes in `docs/quickstart.md` and
+     `docs/cli.md`. The install commands beside them are already written in
+     their released form, so nothing else in either file changes.
+
+   Commit both.
+
+4. Tag and push:
 
    ```bash
    git tag v0.2.0 && git push origin main v0.2.0
    ```
 
-6. The `Release` workflow checks the tag against the package version and the
+5. The `Release` workflow checks the tag against both package versions and the
    changelog, runs typecheck, tests and the packaged-install verification, then
-   publishes with provenance.
+   publishes the library with provenance and the CLI after it. That order
+   matters: the CLI depends on the exact library version, so publishing it
+   first would put a package on the registry that cannot install.
 
-7. Confirm it landed, and that the provenance badge shows on the package page:
+6. Confirm from outside, in a scratch directory rather than this repository:
 
    ```bash
-   npm view @masterplaycoding/eventlab
+   npm install @masterplaycoding/eventlab && npx eventlab --help
    ```
 
-8. Bump `packages/core/package.json` to the next version and commit.
+   `verify:packaged` proves the tarball is correct; only this proves it is
+   reachable. Check the provenance badge on the package page while you are
+   there.
 
-## After the first release
+7. Bump both packages and the CLI's pinned dependency to the next version and
+   commit.
 
-Remove the "not published yet" note and the install-from-source block from
-`README.md`, and change the roadmap row from *in progress* to *released*.
+## Subsequent releases
+
+Steps 1-7 with the new version substituted, plus setting the version in
+`packages/core/package.json`, `packages/cli/package.json` and the CLI's
+dependency on the library — all three, or the release guard stops the workflow
+before it publishes anything.
 
 ## What is deliberately not automated
 

@@ -148,9 +148,9 @@ this project spends a lot of words avoiding.
 The publishing pipeline is built and tested — see
 [RELEASING.md](RELEASING.md) and
 [`.github/workflows/release.yml`](.github/workflows/release.yml), which gates a
-publish on the same packed-tarball verification CI runs. It is deliberately
-held until the `0.2` API settles, since barriers will extend the public
-surface and a registry version is permanent.
+publish on the same packed-tarball verification CI runs. `0.2.0` is prepared
+and every check it will face passes; what is left is an npm scope and a
+publishing credential, neither of which belongs in a repository.
 
 </details>
 

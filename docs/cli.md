@@ -8,6 +8,14 @@ dependency on it, and nothing in a test needs it.
 npm install --save-dev @masterplaycoding/eventlab-cli
 ```
 
+> **Not on npm yet.** `@masterplaycoding/eventlab-cli` is prepared but not
+> published, so the command above fails today. Build from source instead — see
+> [Install](../README.md#install). It is written in the form it takes once the
+> package is released, and this note is deleted on the same day.
+
+From a source build, the CLI is at `packages/cli/dist/bin.js` once
+`npm run build` has run.
+
 ## A scenario module
 
 The CLI executes a JavaScript module that exports three things:

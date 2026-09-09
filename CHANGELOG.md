@@ -5,11 +5,10 @@ All notable changes are recorded here. This project follows
 versioning. Until `1.0`, the public API and the report schema may change
 between minor versions; each change will be listed here with a migration note.
 
-## [Unreleased]
+## [0.2.0] - unreleased
 
-Working toward `0.2.0`, the first published release. Publication is held until
-the barrier API has settled, since a registry version is permanent. See
-[RELEASING.md](RELEASING.md).
+Prepared in full; the date becomes real on the day it is tagged. Publishing
+needs credentials no repository should hold - see [RELEASING.md](RELEASING.md).
 
 ### Fixed
 

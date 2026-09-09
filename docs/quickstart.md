@@ -8,6 +8,11 @@ Five minutes, one HTTP test, no changes to your application's architecture.
 npm install --save-dev @masterplaycoding/eventlab
 ```
 
+> **Not on npm yet.** `@masterplaycoding/eventlab` is prepared but not
+> published, so the command above fails today. Build from source instead — see
+> [Install](../README.md#install). It is written in the form it takes once the
+> package is released, and this note is deleted on the same day.
+
 EventLab never imports a test runner. Use it from whichever one you already
 have; the examples below use Vitest, but nothing in the library depends on it.
 
