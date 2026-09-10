@@ -37,18 +37,36 @@ and the release fails at the publish step.
 
 ## Releasing
 
-`0.2.0` is already prepared. Both packages are at that version, the CLI pins the
-library at it, the changelog has its section, and everything below except the
-tag has been run. What is left is the part that cannot be done without an
-account.
+Substitute the version you are releasing for `X.Y.Z` throughout.
 
-1. Verify locally, exactly as CI will:
+1. Set the version in **three** places. All three, or the release guard stops
+   the workflow before it publishes anything:
+
+   - `packages/core/package.json` → `version`
+   - `packages/cli/package.json` → `version`
+   - `packages/cli/package.json` → `dependencies["@masterplaycoding/eventlab"]`
+
+   The CLI pins the library at an exact version, so a release where the two
+   disagree would put a package on the registry that cannot install.
+
+2. In `CHANGELOG.md`, rename the `## [Unreleased]` heading to
+   `## [X.Y.Z] - <today>`. The workflow refuses to publish without a section
+   matching the tag.
+
+3. Verify locally, exactly as CI will:
 
    ```bash
    npm run typecheck && npm test && npm run verify:packaged
    ```
 
-2. Check what will actually ship — `files` is an allowlist, and it is easy to
+   ```bash
+   node scripts/check-release-version.mjs vX.Y.Z
+   ```
+
+   The second is the one that catches a version set in two places out of
+   three, and a file a package claims to ship but does not have.
+
+4. Check what will actually ship — `files` is an allowlist, and it is easy to
    publish either too little or a `node_modules`:
 
    ```bash
@@ -59,50 +77,55 @@ account.
    npm pack --dry-run --workspace @masterplaycoding/eventlab-cli
    ```
 
-3. Make the claims that are only true on the day true:
-
-   - replace `unreleased` on the `## [0.2.0]` heading in `CHANGELOG.md` with
-     the date;
-   - in `README.md`, delete the *Why not `npm install …`?* section and put the
-     registry install above the build-from-source one, which stays — it is how
-     anyone works on the library rather than with it;
-   - delete the **Not on npm yet** notes in `docs/quickstart.md` and
-     `docs/cli.md`. The install commands beside them are already written in
-     their released form, so nothing else in either file changes.
-
-   Commit both.
-
-4. Tag and push:
+5. Commit, tag and push:
 
    ```bash
-   git tag v0.2.0 && git push origin main v0.2.0
+   git commit -am "chore(release): X.Y.Z" && git tag vX.Y.Z && git push origin main vX.Y.Z
    ```
 
-5. The `Release` workflow checks the tag against both package versions and the
+   The tag is what triggers the workflow. Pushing `main` alone does nothing.
+
+6. The `Release` workflow checks the tag against both package versions and the
    changelog, runs typecheck, tests and the packaged-install verification, then
-   publishes the library with provenance and the CLI after it. That order
-   matters: the CLI depends on the exact library version, so publishing it
-   first would put a package on the registry that cannot install.
+   publishes the library with provenance and the CLI after it.
 
-6. Confirm from outside, in a scratch directory rather than this repository:
+   **npm publishes immediately and irreversibly.** There is no hold-and-confirm
+   step as there is on Maven Central, which is why every check runs first.
+
+7. Confirm from outside, in a scratch directory rather than this repository —
+   inside, npm resolves the workspace copy and proves nothing:
 
    ```bash
-   npm install @masterplaycoding/eventlab && npx eventlab --help
+   cd $(mktemp -d) && npm init -y && npm install @masterplaycoding/eventlab @masterplaycoding/eventlab-cli
    ```
 
-   `verify:packaged` proves the tarball is correct; only this proves it is
-   reachable. Check the provenance badge on the package page while you are
-   there.
+   ```bash
+   npx eventlab --help
+   ```
 
-7. Bump both packages and the CLI's pinned dependency to the next version and
-   commit.
+   Check the provenance badge on the package page while you are there.
 
-## Subsequent releases
+8. Open the next version: bump all three fields from step 1 to the next
+   version, add a fresh `## [Unreleased]` heading, and commit. Leave the README
+   at the released version — it advertises what a user can depend on, not what
+   the working tree is building.
 
-Steps 1-7 with the new version substituted, plus setting the version in
-`packages/core/package.json`, `packages/cli/package.json` and the CLI's
-dependency on the library — all three, or the release guard stops the workflow
-before it publishes anything.
+## If a release goes wrong
+
+A published version is permanent; npm's unpublish policy is narrow and
+republishing the same version is forbidden. The fix is always `X.Y.Z+1`, never
+a replacement.
+
+If the workflow fails *before* the publish steps, nothing was published. Fix
+the cause, delete the tag, and tag again:
+
+```bash
+git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z
+```
+
+If the library published and the CLI did not, the library version is spent.
+Bump to the next patch version and release both together rather than trying to
+publish the CLI alone against a version it no longer matches.
 
 ## What is deliberately not automated
 

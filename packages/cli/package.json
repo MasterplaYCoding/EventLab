@@ -1,13 +1,18 @@
 {
   "name": "@masterplaycoding/eventlab-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Command line for EventLab: run a scenario, replay a saved plan, render a report.",
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22"
   },
-  "keywords": ["webhooks", "testing", "cli", "event-driven"],
+  "keywords": [
+    "webhooks",
+    "testing",
+    "cli",
+    "event-driven"
+  ],
   "bin": {
     "eventlab": "./dist/bin.js"
   },
@@ -17,21 +22,30 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MasterplaYCoding/EventLab.git",
     "directory": "packages/cli"
   },
-  "bugs": { "url": "https://github.com/MasterplaYCoding/EventLab/issues" },
+  "bugs": {
+    "url": "https://github.com/MasterplaYCoding/EventLab/issues"
+  },
   "homepage": "https://github.com/MasterplaYCoding/EventLab#readme",
   "author": "Matei Ursache",
-  "publishConfig": { "access": "public", "provenance": true },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc --build",
     "clean": "tsc --build --clean"
   },
   "dependencies": {
-    "@masterplaycoding/eventlab": "0.2.0"
+    "@masterplaycoding/eventlab": "0.3.0"
   }
 }

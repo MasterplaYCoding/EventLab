@@ -1,6 +1,6 @@
 {
   "name": "@masterplaycoding/eventlab",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Reproducible duplicate, delayed, reordered and concurrent event delivery testing for HTTP targets.",
   "license": "MIT",
   "type": "module",
