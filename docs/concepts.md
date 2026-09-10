@@ -100,3 +100,48 @@ A report is something you attach to an issue.
 Response body previews *are* captured, bounded at 64 KiB by default and marked
 `bodyTruncated` when cut. If your target echoes secrets back, redact them in
 your handler.
+
+## Restarting the application under test
+
+A barrier is a quiet moment: everything before it has settled, nothing after it
+has started, and a checkpoint runs in between. Stopping and starting your
+application is just something a checkpoint can do.
+
+What makes it work is that `target.baseUrl` may be a function:
+
+```ts
+const report = await runPlan(plan, {
+  events,
+  target: {
+    // Called once per phase. A restarted process comes back on a different
+    // ephemeral port, and a string captured before the first delivery would
+    // point at a closed socket.
+    baseUrl: () => app.baseUrl,
+    request: ({ event }) => ({ /* ... */ }),
+  },
+  hooks: {
+    checkpoints: {
+      restart: async () => {
+        await app.stop();
+        app = await start();
+      },
+    },
+  },
+});
+```
+
+Once per phase, not once per attempt. Deliveries inside a phase run
+concurrently and must all reach the same process; resolving per attempt would
+let a single phase straddle a restart and report deliveries against something
+that had already gone.
+
+The loopback check runs on every resolution, so a restart cannot move the
+target to a host the run was never allowed to touch. An address that is
+unusable afterwards is a **harness error**, not a failed barrier — the
+application never got the chance to fail anything.
+
+This is worth doing because a whole class of bug is invisible without it. A
+handler that deduplicates in a `Set`, a cache that is authoritative until it is
+empty, a lock held in a variable: all correct for as long as the process lives.
+[`examples/restart`](../examples/restart) is one of those, and it passes every
+single-process test there is.

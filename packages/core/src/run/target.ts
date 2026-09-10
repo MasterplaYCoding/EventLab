@@ -1,24 +1,47 @@
 import { HarnessError } from "../errors.js";
 import type { HttpTarget } from "../types.js";
+import { describeCause } from "../internal/describeCause.js";
 
 const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
 /**
- * Checks a target is usable and, by default, points at loopback.
+ * Resolves a target's base URL, checks it is usable, and by default requires
+ * loopback.
+ *
+ * Called once per phase rather than once per run. A `baseUrl` function is what
+ * makes an application that restarts mid-scenario testable - it comes back on a
+ * new ephemeral port, and an address captured before the first delivery would
+ * point at a socket nobody is listening on.
  *
  * The default matters: EventLab exists to hammer a target with duplicate and
  * concurrent traffic. Pointing that at a shared staging host by a typo in an
  * environment variable is the kind of accident worth making impossible without
  * an explicit opt-in.
  */
-export function resolveBaseUrl(target: HttpTarget, allowRemoteTargets: boolean): URL {
+export async function resolveBaseUrl(
+  target: HttpTarget,
+  allowRemoteTargets: boolean,
+): Promise<URL> {
+  let raw: string;
+  try {
+    raw = typeof target.baseUrl === "function" ? await target.baseUrl() : target.baseUrl;
+  } catch (cause) {
+    // A restart hook that fails is a broken experiment, not a failing
+    // application, so it is a harness error like any other bad target.
+    throw new HarnessError(
+      "InvalidTarget",
+      `target.baseUrl threw while resolving: ${describeCause(cause)}`,
+      "target.baseUrl",
+    );
+  }
+
   let base: URL;
   try {
-    base = new URL(target.baseUrl);
+    base = new URL(raw);
   } catch {
     throw new HarnessError(
       "InvalidTarget",
-      `target.baseUrl must be an absolute URL, received "${target.baseUrl}"`,
+      `target.baseUrl must be an absolute URL, received "${raw}"`,
       "target.baseUrl",
     );
   }

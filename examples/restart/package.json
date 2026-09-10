@@ -1,0 +1,14 @@
+{
+  "name": "@masterplaycoding/eventlab-example-restart",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A handler that deduplicates in memory, and the restart that exposes it.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --root ../.. examples/restart"
+  },
+  "dependencies": {
+    "@masterplaycoding/eventlab": "*"
+  }
+}

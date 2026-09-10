@@ -71,7 +71,10 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
     const events = indexEvents(options.events);
     assertFixturesMatch(plan, options.events);
     assertCheckpointsExist(plan, options.hooks);
-    const base = resolveBaseUrl(options.target, options.allowRemoteTargets ?? false);
+    // Resolved before setup so an unusable target fails before the
+    // application is started, and re-resolved at each phase so a restart
+    // during a barrier can move the port.
+    let base = await resolveBaseUrl(options.target, options.allowRemoteTargets ?? false);
 
     try {
       await options.hooks?.setup?.();
@@ -170,6 +173,7 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
         if (barrier.checkpoint !== undefined) {
           await options.hooks?.checkpoints?.[barrier.checkpoint]?.();
         }
+
         barrierReports.push({
           name: barrier.name,
           afterPhase: barrier.afterPhase,
@@ -193,6 +197,14 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
         });
         break;
       }
+
+      // Deliberately outside the barrier's own try. The checkpoint is where an
+      // application gets restarted, so this is the first moment its new address
+      // exists - but an address that is unusable afterwards is a broken
+      // experiment, not the application failing a checkpoint. Catching it above
+      // would file it as a barrier failure and report the application as having
+      // refused to reach a state it never got the chance to.
+      base = await resolveBaseUrl(options.target, options.allowRemoteTargets ?? false);
     }
 
     // Barriers the run never got to are reported as skipped rather than

@@ -164,6 +164,9 @@ cd EventLab && npm ci && npm test
 - [`examples/inbox-outbox`](examples/inbox-outbox) — durable inbox/outbox
   processing that survives a worker killed mid-transaction. Uses `node:sqlite`,
   built into Node, so it still needs no Docker and no install.
+- [`examples/restart`](examples/restart) — a handler that deduplicates in
+  memory. Correct for as long as the process keeps running, and wrong the
+  moment it is replaced.
 
 ## Five-minute quickstart
 
@@ -193,6 +196,7 @@ ends up in*.
 | Reports never contain request bodies, and record request header *names* only. | Response body previews are captured (bounded, 64 KiB by default). If your target echoes secrets, redact them in your own handler. |
 | Deliveries go to loopback only. | Set `allowRemoteTargets: true` to override — deliberately explicit, because duplicating and bursting traffic at a shared host is not something to do by accident. |
 | A saved plan replays the same instructions, and refuses to run against edited fixtures or a different planner version. | It cannot reproduce a race that depended on machine timing. Use a barrier and a checkpoint for that. |
+| The target address is resolved once per phase, so an application restarted at a barrier is reached at the port it came back on. The loopback check runs on every resolution. | Within a phase the address is fixed - deliveries there are concurrent and must all reach one process. A restart mid-phase is not something EventLab can express, and pretending otherwise would report deliveries against a process that had gone. |
 | A barrier releases nothing from a later phase until every attempt in the earlier one has settled, and its checkpoint has run. | Within a phase, ordering is still the network and your application's to decide. A barrier bounds a run into stages; it does not make a stage deterministic. |
 
 ## Roadmap
@@ -201,7 +205,8 @@ ends up in*.
 |---|---|---|
 | `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples | **implemented** |
 | `0.2` | Explicit barriers, a barrier-only example, durable inbox/outbox crash recovery, and the `eventlab` CLI with an HTML timeline | **released** |
-| `0.3` | Controlled restart hooks, benchmarks, recipes for unfamiliar frameworks | planned |
+| `0.3` | Restarting the application mid-scenario, and an example that needs it | **implemented**, release pending |
+| `0.4` | Benchmarks, recipes for unfamiliar frameworks | planned |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
 
 ## Documentation

@@ -98,7 +98,7 @@ a result surprises you, look there first.
 
 | Option | Required | Default | Meaning |
 |---|---|---|---|
-| `target` | yes | — | `baseUrl`, a `request` builder, optional `timeoutMs`. |
+| `target` | yes | — | `baseUrl` (string or function, see below), a `request` builder, optional `timeoutMs`. |
 | `events` | yes | — | The same fixtures the plan was built from. |
 | `hooks` | no | — | `setup`, `reset`, `teardown`. |
 | `assertions` | no | `[]` | Your checks. |
@@ -106,6 +106,30 @@ a result surprises you, look there first.
 | `limits` | no | see below | Timeouts and body cap. |
 | `allowRemoteTargets` | no | `false` | Required for non-loopback hosts. |
 | `signal` | no | — | Cancels the run; teardown still runs. |
+
+### `target.baseUrl`
+
+```ts
+readonly baseUrl: string | (() => string | Promise<string>);
+```
+
+A string for the ordinary case. A function when the address can change during
+the run — in practice, when the application restarts at a barrier and comes
+back on a new ephemeral port.
+
+A function is called **once per phase**: before the first delivery, and again
+after each barrier's checkpoint. It may be async.
+
+Every resolution is validated, not just the first. A non-absolute URL is
+`InvalidTarget`, a non-loopback host is `RemoteTargetBlocked` (unless
+`allowRemoteTargets` is set), and a function that throws is `InvalidTarget`
+carrying the thrown message. So a restart is not a way around the loopback
+default, and an application that fails to come back is a harness error rather
+than a failing barrier — it never got the chance to fail anything.
+
+Once per phase and not once per attempt, because deliveries within a phase run
+concurrently and must all reach the same process. See
+[Restarting the application under test](concepts.md#restarting-the-application-under-test).
 
 ### Limits
 

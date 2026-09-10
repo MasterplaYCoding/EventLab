@@ -101,8 +101,20 @@ export interface RequestContext {
  * authentication headers and signatures are computed fresh per attempt.
  */
 export interface HttpTarget {
-  /** Absolute base URL. Loopback only, unless `allowRemoteTargets` is set. */
-  readonly baseUrl: string;
+  /**
+   * Absolute base URL. Loopback only, unless `allowRemoteTargets` is set.
+   *
+   * A function is resolved once per phase rather than once per run, which is
+   * what makes an application that restarts mid-scenario testable: it comes
+   * back on a different ephemeral port, and a string captured before the first
+   * delivery would point at a socket nobody is listening on. Within a phase the
+   * address is fixed, because deliveries there are concurrent and must all
+   * reach the same process.
+   *
+   * The loopback check runs on every resolution, so a restart cannot quietly
+   * move the target to a host the run was never allowed to touch.
+   */
+  readonly baseUrl: string | (() => string | Promise<string>);
   readonly request: (context: RequestContext) => HttpRequestSpec | Promise<HttpRequestSpec>;
   /** Per-request timeout override, in milliseconds. */
   readonly timeoutMs?: number;

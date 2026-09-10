@@ -7,7 +7,41 @@ between minor versions; each change will be listed here with a migration note.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Restarting the application under test mid-scenario.** `target.baseUrl` may
+  now be a function, resolved once per phase instead of once per run. That one
+  change is what makes a restart testable: a barrier already provides the quiet
+  moment and a checkpoint already runs arbitrary code in it, but a process that
+  came back on a fresh ephemeral port could not be reached afterwards, because
+  the address had been captured before the first delivery.
+
+  Once per phase rather than once per attempt, because deliveries within a
+  phase run concurrently and must all reach the same process — a per-attempt
+  resolution would let one phase straddle a restart and report deliveries
+  against something that had already gone.
+
+  Every resolution is validated, not just the first, so a restart cannot move
+  the target to a host the run was never allowed to touch. An address that is
+  unusable afterwards is a **harness error** rather than a failed barrier: the
+  application never got the chance to fail anything, and reporting it as a
+  checkpoint failure would blame it for something it did not do.
+
+- `examples/restart`: a handler that deduplicates in a `Set`. It keys on the
+  order rather than the event, so it is *not* the README's bug — within one
+  process it is correct, and every single-process test passes. What it gets
+  wrong is the lifetime. Restart it and the set is empty while the database
+  still holds every fulfilment it made, so the next redelivery notifies the
+  customer a second time. Every request returns 200 throughout.
+
+- A guarantee-and-limit row for target resolution, and a concepts section on
+  restarts.
+
+### Changed
+
+- `resolveBaseUrl` is now async and returns a `Promise<URL>`. Internal; the
+  exported surface is unchanged apart from `baseUrl` accepting a function,
+  which is additive — every existing scenario passing a string is unaffected.
 
 ## [0.2.1] - 2026-09-10
 

@@ -1,11 +1,26 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/core" },
-    { "path": "./packages/cli" },
-    { "path": "./examples/duplicate-handler" },
-    { "path": "./examples/voting" },
-    { "path": "./examples/barrier-settlement" },
-    { "path": "./examples/inbox-outbox" }
+    {
+      "path": "./packages/core"
+    },
+    {
+      "path": "./packages/cli"
+    },
+    {
+      "path": "./examples/duplicate-handler"
+    },
+    {
+      "path": "./examples/voting"
+    },
+    {
+      "path": "./examples/barrier-settlement"
+    },
+    {
+      "path": "./examples/inbox-outbox"
+    },
+    {
+      "path": "./examples/restart"
+    }
   ]
 }
