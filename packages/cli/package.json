@@ -1,6 +1,6 @@
 {
   "name": "@masterplaycoding/eventlab-cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Command line for EventLab: run a scenario, replay a saved plan, render a report.",
   "license": "MIT",
   "type": "module",
@@ -46,6 +46,6 @@
     "clean": "tsc --build --clean"
   },
   "dependencies": {
-    "@masterplaycoding/eventlab": "0.2.1"
+    "@masterplaycoding/eventlab": "0.2.2"
   }
 }

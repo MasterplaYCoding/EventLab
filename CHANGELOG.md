@@ -5,6 +5,10 @@ All notable changes are recorded here. This project follows
 versioning. Until `1.0`, the public API and the report schema may change
 between minor versions; each change will be listed here with a migration note.
 
+## [Unreleased]
+
+Nothing yet.
+
 ## [0.2.1] - 2026-09-10
 
 ### Fixed
