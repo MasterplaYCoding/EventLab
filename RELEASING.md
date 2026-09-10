@@ -15,31 +15,25 @@ npm login
 npm org ls masterplaycoding   # or create the scope at npmjs.com
 ```
 
-### 2. A token for the first publish
+### 2. Publishing credentials
 
-npm's **trusted publishing** (OIDC) is the goal — no long-lived token at all —
-but it attaches to a package that already exists, so the first release has to
-be bootstrapped:
+There are none, and that is the point. npm authenticates this repository's
+release workflow through **trusted publishing** (OIDC): npm is configured to
+trust `MasterplaYCoding/EventLab`, the workflow file `release.yml`, and the
+`npm-publish` environment, and issues a short-lived credential to that
+combination. Nothing long-lived is stored anywhere.
 
-1. Create a **granular access token** at npmjs.com with write permission, a
-   short expiry, and scope over the `@masterplaycoding` packages. It has to
-   cover both `eventlab` and `eventlab-cli`; neither exists yet, so scope it
-   to the whole scope rather than to packages by name.
-2. Add it as the `NPM_TOKEN` secret in a **`npm-publish` environment**
-   (Settings → Environments → New environment), not as a plain repository
-   secret. An environment can require your approval before the job runs and
-   keeps the token out of every other workflow.
-3. Publish `0.2.0`.
-4. Then configure the trusted publisher, **once per package** - it is a
-   per-package setting, and forgetting the CLI leaves half the release still
-   depending on a token you are about to delete. For each of `eventlab` and
-   `eventlab-cli`: npmjs.com → the package → Settings → Trusted Publisher →
-   GitHub Actions, repository `MasterplaYCoding/EventLab`, workflow
-   `release.yml`, environment `npm-publish`.
-5. Delete the token and remove `NODE_AUTH_TOKEN` from `release.yml`.
+This was bootstrapped with a granular access token for `0.2.0`, because a
+trusted publisher attaches to a package that already exists and neither
+package did. That token has been deleted.
 
-Provenance works either way — it comes from `id-token: write` and the
-workflow's OIDC claims, not from how the publish authenticated.
+If a package is ever added to this repository, it needs its own trusted
+publisher before it can be released - the setting is per package, not per
+repository. On npmjs.com: the package → Settings → Trusted Publisher → GitHub
+Actions, organization `MasterplaYCoding`, repository `EventLab`, workflow
+filename `release.yml`, environment name `npm-publish`, and **Allow
+`npm publish`** ticked. Without that last box the publisher may only stage,
+and the release fails at the publish step.
 
 ## Releasing
 

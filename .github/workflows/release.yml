@@ -6,16 +6,19 @@ on:
 
 permissions:
   contents: read
-  # Required for npm provenance: the attestation is built from this workflow's
-  # OIDC claims, which is what lets npm show where the package was built.
+  # Does two jobs. npm's provenance attestation is built from this workflow's
+  # OIDC claims, and since 0.2.0 those same claims are how the publish
+  # authenticates at all - npm trusts this repository, this workflow file and
+  # this environment, rather than a token someone has to store and rotate.
   id-token: write
 
 jobs:
   publish:
     name: publish to npm
     runs-on: ubuntu-latest
-    # A GitHub environment, so the token can be scoped to releases and the
-    # publish can be gated on a manual approval.
+    # Named in npm's trusted publisher configuration, so this is part of what
+    # authorises the publish rather than only gating it on an approval. A
+    # release from any other environment is refused by the registry.
     environment: npm-publish
     steps:
       - uses: actions/checkout@v4
@@ -50,10 +53,6 @@ jobs:
       # version, so the core has to exist on the registry first.
       - name: Publish the library
         run: npm publish --provenance --access public --workspace @masterplaycoding/eventlab
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish the CLI
         run: npm publish --provenance --access public --workspace @masterplaycoding/eventlab-cli
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
