@@ -52,6 +52,26 @@ between minor versions; each change will be listed here with a migration note.
 
 ### Fixed
 
+- **A large response body cost the whole request timeout.** Once the response
+  reader reached `maxResponseBodyBytes` it marked the preview truncated and
+  then carried on reading to the end of the body, discarding everything it
+  read. Memory stayed bounded, which is what the report promised; the work did
+  not. Measured against a target streaming 64 KiB chunks, keeping a 1 KiB
+  preview drained **32 MiB** — and against a body that never ends, the delivery
+  ran until the request timeout and was reported as a *timeout*, which is a
+  statement about the application that was simply untrue. It had responded, and
+  responded at once.
+
+  The reader now stops at the limit and cancels the body. Cancellation is not
+  awaited: it settles when the transport has finished tearing the connection
+  down, and against a target still writing at full speed that takes about as
+  long as the thing being cancelled — which would make the delivery wait for
+  exactly the work it had just decided to stop doing.
+
+  The same scenario now completes in about 50 ms rather than 10 seconds, and
+  the target writes under 4 MiB rather than 32. The connection is no longer
+  reusable afterwards, which is the intended trade and is stated in the README.
+
 - **A scenario module that throws a non-Error reported `undefined`.** The
   loader read `.message` off whatever the import rejected with, so
   `throw "the database was unreachable"` in a scenario produced

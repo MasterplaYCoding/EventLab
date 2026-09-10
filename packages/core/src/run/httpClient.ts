@@ -97,22 +97,38 @@ async function readBounded(
       if (done) {
         break;
       }
+
+      // Anything arriving after the limit is already reached proves the body
+      // was longer than the limit, and is the last thing worth learning from
+      // it. Stop, rather than reading to the end of something whose remaining
+      // bytes are going to be discarded.
       if (size >= limit) {
         truncated = true;
-        continue;
+        break;
       }
+
       const remaining = limit - size;
       if (value.byteLength > remaining) {
         chunks.push(value.subarray(0, remaining));
         size = limit;
         truncated = true;
-      } else {
-        chunks.push(value);
-        size += value.byteLength;
+        break;
       }
+
+      chunks.push(value);
+      size += value.byteLength;
     }
   } finally {
-    reader.releaseLock();
+    // cancel, not releaseLock: releasing leaves the body unread and the socket
+    // waiting for someone to finish it. Cancelling tells the transport nobody
+    // is coming, which is what keeps a response nobody wants from costing the
+    // rest of the run. A body already fully read cancels harmlessly.
+    //
+    // Not awaited. Cancellation settles when the transport has finished tearing
+    // the connection down, and against a target still writing at full speed
+    // that can take as long as the thing being cancelled - which would make
+    // the delivery wait for exactly the work it just decided to stop doing.
+    void reader.cancel().catch(() => {});
   }
 
   return { text: Buffer.concat(chunks).toString("utf8"), truncated };
