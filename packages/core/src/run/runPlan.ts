@@ -20,6 +20,7 @@ import { resolveBaseUrl, resolveRequestUrl } from "./target.js";
 const DEFAULT_LIMITS: RunLimits = {
   requestTimeoutMs: 5_000,
   scenarioTimeoutMs: 30_000,
+  teardownTimeoutMs: 5_000,
   maxResponseBodyBytes: 64 * 1024,
 };
 
@@ -242,7 +243,7 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
   } finally {
     clearTimeout(scenarioTimer);
     options.signal?.removeEventListener("abort", abort);
-    cleanup = await runTeardown(options, setupCompleted);
+    cleanup = await runTeardown(options, setupCompleted, limits.teardownTimeoutMs);
   }
 
   return {
@@ -300,6 +301,7 @@ function meetsDeliveryExpectation(
 async function runTeardown(
   options: RunOptions,
   setupCompleted: boolean,
+  timeoutMs: number,
 ): Promise<RunReport["cleanup"]> {
   if (options.hooks?.teardown === undefined) {
     return { status: "skipped" };
@@ -309,11 +311,43 @@ async function runTeardown(
     return { status: "skipped", message: "setup did not complete" };
   }
 
+  // Bounded on its own budget. Teardown runs after the scenario timeout has
+  // been cleared - it has to, because a run that timed out still needs
+  // cleaning up - so nothing else would ever stop it. A hook that never
+  // settles would otherwise mean runPlan never returns, and a test that hangs
+  // with no report at all is a worse outcome than any failure it might have
+  // described.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = Symbol("teardown-timeout");
+
   try {
-    await options.hooks.teardown();
+    const outcome = await Promise.race([
+      (async () => {
+        await options.hooks?.teardown?.();
+        return "ok" as const;
+      })(),
+      new Promise<typeof expired>((resolve) => {
+        timer = setTimeout(() => resolve(expired), timeoutMs);
+      }),
+    ]);
+
+    if (outcome === expired) {
+      return {
+        status: "timed-out",
+        // Said plainly: this is EventLab giving up on the hook, not stopping
+        // it. Whatever it holds - a server, a database handle, a timer - it
+        // still holds, and that is why a process may not exit afterwards.
+        message:
+          `teardown did not finish within ${timeoutMs}ms and is still running. ` +
+          `EventLab stopped waiting; it cannot stop the hook.`,
+      };
+    }
+
     return { status: "ok" };
   } catch (cause) {
     return { status: "failed", message: describeCause(cause) };
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
   }
 }
 

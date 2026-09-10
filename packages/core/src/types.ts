@@ -241,6 +241,15 @@ export interface RunLimits {
   readonly scenarioTimeoutMs: number;
   /** Maximum captured response body bytes. Default 65536. */
   readonly maxResponseBodyBytes: number;
+  /**
+   * How long to wait for `teardown` before giving up on it. Default 5000.
+   *
+   * Separate from [scenarioTimeoutMs] because teardown runs *after* that
+   * budget is spent - a run that has already timed out still has to be cleaned
+   * up. Without its own bound, a teardown that hangs makes `runPlan` never
+   * return, which is a worse failure than anything it was cleaning up after.
+   */
+  readonly teardownTimeoutMs: number;
 }
 
 /** Options for {@link runPlan}. */
@@ -280,7 +289,17 @@ export interface RunReport {
     readonly message: string;
     readonly at?: string;
   };
-  readonly cleanup: { readonly status: "ok" | "failed" | "skipped"; readonly message?: string };
+  /**
+   * What became of `teardown`.
+   *
+   * `timed-out` means EventLab stopped waiting, not that it stopped the hook -
+   * a promise that never settles cannot be cancelled from outside. Whatever it
+   * was holding, it is still holding.
+   */
+  readonly cleanup: {
+    readonly status: "ok" | "failed" | "skipped" | "timed-out";
+    readonly message?: string;
+  };
   /** Bodies are never embedded; replay reads them from the fixture module. */
   readonly redaction: {
     readonly requestBodies: "omitted";

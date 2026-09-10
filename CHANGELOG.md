@@ -52,6 +52,22 @@ between minor versions; each change will be listed here with a migration note.
 
 ### Fixed
 
+- **A `teardown` that never returned made `runPlan` never return.** Teardown
+  runs after `scenarioTimeoutMs` has been cleared — it has to, because a run
+  that timed out still needs cleaning up — so nothing was left to bound it. A
+  hook awaiting something that never settles produced no report at all, which
+  is a worse outcome than any failure a report could have described, and the
+  runner reported it as "test timed out" with no hint of the cause.
+
+  `teardownTimeoutMs` (default 5,000) now bounds it, and `cleanup.status`
+  gains `timed-out`. The message says plainly that EventLab stopped waiting
+  rather than stopped the hook — a promise that never settles cannot be
+  cancelled from outside, so whatever it held it still holds, which is why the
+  process may not exit afterwards.
+
+  `docs/api.md` described `scenarioTimeoutMs` as bounding the "whole run".
+  It never bounded teardown; it now says so.
+
 - **A large response body cost the whole request timeout.** Once the response
   reader reached `maxResponseBodyBytes` it marked the preview truncated and
   then carried on reading to the end of the body, discarding everything it

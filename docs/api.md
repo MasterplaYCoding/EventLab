@@ -136,8 +136,9 @@ concurrently and must all reach the same process. See
 | Limit | Default | Notes |
 |---|---|---|
 | `requestTimeoutMs` | 5,000 | Per attempt. `target.timeoutMs` overrides. |
-| `scenarioTimeoutMs` | 30,000 | Whole run. **A slow target under `burst()` will hit this**, and it surfaces as a `ScenarioTimeout` harness error rather than an assertion failure. |
-| `maxResponseBodyBytes` | 65,536 | Captured preview; truncation is reported. |
+| `scenarioTimeoutMs` | 30,000 | Deliveries and assertions — everything except `teardown`, which needs its own budget because it runs after this one is spent. **A slow target under `burst()` will hit this**, and it surfaces as a `ScenarioTimeout` harness error rather than an assertion failure. |
+| `maxResponseBodyBytes` | 65,536 | Captured preview; truncation is reported. Reading stops there rather than draining the rest. |
+| `teardownTimeoutMs` | 5,000 | How long to wait for `teardown`. It runs *after* `scenarioTimeoutMs` is spent, so it needs its own bound or a hanging hook means `runPlan` never returns. Reported as `cleanup.status: "timed-out"` — EventLab stopped waiting, it did not stop the hook. |
 
 ### Delivery expectations
 
@@ -184,7 +185,7 @@ Four outcome categories, deliberately never blended:
 | `attempts[].outcome` | What the transport did |
 | `assertions[]` | What your check said about your application |
 | `harnessError` | The experiment itself was invalid |
-| `cleanup` | Whether teardown completed |
+| `cleanup` | Whether teardown completed: `ok`, `failed`, `skipped`, or `timed-out` |
 
 `passed` is true only when the delivery expectation held, every assertion
 passed, and teardown did not fail.

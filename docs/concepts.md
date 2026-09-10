@@ -44,6 +44,14 @@ than as a confusing pile of transport failures halfway through a run.
 setup → reset → scheduled deliveries → assertions → teardown
 ```
 
+`teardown` is bounded by `teardownTimeoutMs` (5 s by default) rather than by
+the scenario budget, because it runs after that budget is spent — a run that
+timed out still has to be cleaned up. When it overruns, `cleanup.status` is
+`timed-out` and the run reports normally. Read that as *EventLab stopped
+waiting*, not as *the hook was stopped*: a promise that never settles cannot be
+cancelled from outside, so whatever it was holding it is still holding, and a
+process that will not exit afterwards is the visible symptom.
+
 `teardown` runs on every path: success, assertion failure, harness error,
 scenario timeout and cancellation. Its own failure is reported as a *cleanup*
 failure and does not overwrite whatever went wrong first.
@@ -71,7 +79,7 @@ A report never blends these, because they lead to different actions:
 | Delivery outcome | `attempts[].outcome` | What the transport did: a response, a timeout, a connection error, a cancellation |
 | Assertion outcome | `assertions[]` | What *your* check said about *your* application's state |
 | Harness error | `harnessError` | The experiment itself was invalid: bad scenario, blocked target, failed setup |
-| Cleanup outcome | `cleanup` | Whether teardown completed |
+| Cleanup outcome | `cleanup` | Whether teardown completed, failed, was skipped, or overran its budget |
 
 A failing assertion is a statement about your application. A `HarnessError` is
 a statement about EventLab's inputs. Conflating them would make "my scenario
