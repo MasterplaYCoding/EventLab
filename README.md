@@ -117,7 +117,13 @@ demonstrated without hoping.
 
 ## Install
 
-Build it once, then depend on it from anywhere:
+```bash
+npm install --save-dev @masterplaycoding/eventlab
+```
+
+### From source
+
+To work on EventLab itself, or to depend on an unreleased change:
 
 ```bash
 git clone https://github.com/MasterplaYCoding/EventLab.git
@@ -138,21 +144,6 @@ Requires **Node 22 or 24** — those are what CI covers; the `engines` floor is
 TypeScript consumers need `"moduleResolution": "node16"`, `"nodenext"` or
 `"bundler"`. No runtime dependencies. No cloud account, no Docker and no
 database is needed to run the default example.
-
-<details>
-<summary>Why not <code>npm install @masterplaycoding/eventlab</code>?</summary>
-
-Because it is not on npm yet, and saying otherwise would be the kind of claim
-this project spends a lot of words avoiding.
-
-The publishing pipeline is built and tested — see
-[RELEASING.md](RELEASING.md) and
-[`.github/workflows/release.yml`](.github/workflows/release.yml), which gates a
-publish on the same packed-tarball verification CI runs. `0.2.0` is prepared
-and every check it will face passes; what is left is an npm scope and a
-publishing credential, neither of which belongs in a repository.
-
-</details>
 
 ## Running the examples
 
@@ -209,7 +200,7 @@ ends up in*.
 | Milestone | Contents | State |
 |---|---|---|
 | `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples | **implemented** |
-| `0.2` | Explicit barriers, a barrier-only example, durable inbox/outbox crash recovery, and the `eventlab` CLI with an HTML timeline | **implemented**, release pending |
+| `0.2` | Explicit barriers, a barrier-only example, durable inbox/outbox crash recovery, and the `eventlab` CLI with an HTML timeline | **released** |
 | `0.3` | Controlled restart hooks, benchmarks, recipes for unfamiliar frameworks | planned |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
 
