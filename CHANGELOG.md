@@ -9,6 +9,19 @@ between minor versions; each change will be listed here with a migration note.
 
 ### Added
 
+- `packages/cli/test/html.test.ts`: the timeline is a file people forward, and
+  everything in it — scenario names, attempt ids, URLs, assertion messages —
+  comes from outside the process. Nothing tested the escaping that keeps that
+  from being an injection surface. Covers each of those fields against a script
+  payload and an attribute-breaking quote, that `&` is escaped before the
+  entities escaping introduces, that response bodies stay omitted even though
+  the report holds them, that the document references nothing outside itself,
+  and that bar geometry cannot emit `NaN` when every attempt is instantaneous.
+- `packages/cli/test/scenario.test.ts`: which export is missing, from which
+  file, for each of the six ways a scenario module can be incomplete — plus a
+  file that does not exist, one that does not parse, and one that throws a
+  string.
+
 - **Restarting the application under test mid-scenario.** `target.baseUrl` may
   now be a function, resolved once per phase instead of once per run. That one
   change is what makes a restart testable: a barrier already provides the quiet
@@ -36,6 +49,14 @@ between minor versions; each change will be listed here with a migration note.
 
 - A guarantee-and-limit row for target resolution, and a concepts section on
   restarts.
+
+### Fixed
+
+- **A scenario module that throws a non-Error reported `undefined`.** The
+  loader read `.message` off whatever the import rejected with, so
+  `throw "the database was unreachable"` in a scenario produced
+  `could not import scenario.mjs: undefined` — the one message guaranteed to
+  help nobody. It now falls back to the value itself.
 
 ### Changed
 

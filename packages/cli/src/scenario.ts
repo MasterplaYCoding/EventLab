@@ -42,7 +42,14 @@ export async function loadScenario(path: string): Promise<ScenarioModule> {
   try {
     module = (await import(pathToFileURL(absolute).href)) as Record<string, unknown>;
   } catch (cause) {
-    throw new ScenarioError(`could not import ${path}: ${(cause as Error).message}`);
+    // Not `(cause as Error).message`. A module can reject with anything at
+    // all - a string, an object, a value from another realm - and the cast
+    // would then produce "could not import scenario.mjs: undefined", which is
+    // the one message guaranteed to help nobody diagnose anything.
+    const described = cause as { message?: unknown };
+    const reason =
+      typeof described?.message === "string" ? described.message : String(cause);
+    throw new ScenarioError(`could not import ${path}: ${reason}`);
   }
 
   // A default export is the common shape, but named exports work too, so a
