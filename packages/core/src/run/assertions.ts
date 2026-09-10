@@ -4,6 +4,7 @@ import type {
   AssertionReport,
   EventuallyAssertion,
 } from "../types.js";
+import { describeCause } from "../internal/describeCause.js";
 
 const DEFAULT_EVENTUALLY_TIMEOUT_MS = 2_000;
 const DEFAULT_EVENTUALLY_INTERVAL_MS = 50;
@@ -51,7 +52,7 @@ async function runCheck(
       kind: "check",
       status: "failed",
       durationMs: elapsed(startedAt),
-      message: message(cause),
+      message: describeCause(cause),
     };
   }
 }
@@ -88,7 +89,7 @@ async function runEventually(
         polls,
       };
     } catch (cause) {
-      lastFailure = message(cause);
+      lastFailure = describeCause(cause);
     }
 
     if (performance.now() >= deadline) {
@@ -110,6 +111,3 @@ function elapsed(startedAt: number): number {
   return Math.round(performance.now() - startedAt);
 }
 
-function message(cause: unknown): string {
-  return cause instanceof Error ? cause.message : String(cause);
-}

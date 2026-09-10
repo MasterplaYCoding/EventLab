@@ -7,8 +7,39 @@ between minor versions; each change will be listed here with a migration note.
 
 ## [Unreleased]
 
-Nothing yet. `0.3` is scoped in the README roadmap: controlled restart hooks,
-benchmarks, and recipes for unfamiliar frameworks.
+### Fixed
+
+- **`isHarnessError` was not safe across realm boundaries**, which is the one
+  thing its documentation promised. It tested `value instanceof Error`, and
+  that compares against *this* realm's `Error`, so a genuine `HarnessError`
+  crossing out of a `node:vm` context or a worker was reported as not being
+  one. It now identifies an error by `Object.prototype.toString`, which is
+  defined on the value's own realm, and requires a `code` so the name alone
+  cannot let something else through.
+- **Failure messages from another realm printed the class name.** The three
+  places that turned a thrown value into text all used the same
+  `instanceof Error` test and all fell through to `String(cause)`, rendering
+  an assertion's `expected 2, found 3` as `Error: expected 2, found 3`. The
+  values arriving there are assertion failures and request-builder failures -
+  user code, which is the code most likely to be running somewhere other than
+  this realm.
+
+### Changed
+
+- The three copies of "get the message off this thrown thing" are now one
+  `describeCause`, with the best behaviour of the three: the HTTP client
+  unwrapped a nested `cause` and the other two did not, so a network failure
+  read as `fetch failed` where it now reads
+  `fetch failed: ECONNREFUSED 127.0.0.1:3000`.
+
+### Added
+
+- `packages/core/test/exports.test.ts`, covering five exports that no test
+  referenced: `isHarnessError`, `countDeliveries`, `deliveriesFor`,
+  `summariseStatuses` and the two version constants. Public, documented, and
+  in the state where behaviour is whatever it happens to be rather than what
+  it says it is. One of the five was wrong.
+- `describeCause` tests, including the realm case that motivated it.
 
 ## [0.2.0] - 2026-09-10
 

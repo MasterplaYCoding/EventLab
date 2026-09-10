@@ -1,4 +1,5 @@
 import { HarnessError, isHarnessError } from "../errors.js";
+import { describeCause } from "../internal/describeCause.js";
 import { assertFixturesMatch } from "../plan/savedPlan.js";
 import { PLANNER_VERSION, REPORT_SCHEMA_VERSION } from "../version.js";
 import type {
@@ -79,7 +80,7 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
     } catch (cause) {
       throw new HarnessError(
         "SetupFailed",
-        `scenario hooks failed before delivery: ${describe(cause)}`,
+        `scenario hooks failed before delivery: ${describeCause(cause)}`,
         "hooks",
       );
     }
@@ -188,7 +189,7 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
           status: "failed",
           attemptsBefore,
           durationMs: Math.round(performance.now() - barrierStartedAt),
-          message: describe(cause),
+          message: describeCause(cause),
         });
         break;
       }
@@ -225,7 +226,7 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
   } catch (cause) {
     harnessError = isHarnessError(cause)
       ? { code: cause.code, message: cause.message, ...(cause.at === undefined ? {} : { at: cause.at }) }
-      : { code: "Unknown", message: describe(cause) };
+      : { code: "Unknown", message: describeCause(cause) };
   } finally {
     clearTimeout(scenarioTimer);
     options.signal?.removeEventListener("abort", abort);
@@ -300,7 +301,7 @@ async function runTeardown(
     await options.hooks.teardown();
     return { status: "ok" };
   } catch (cause) {
-    return { status: "failed", message: describe(cause) };
+    return { status: "failed", message: describeCause(cause) };
   }
 }
 
@@ -363,6 +364,3 @@ function byteLength(body: string | Uint8Array | undefined): number {
   return typeof body === "string" ? Buffer.byteLength(body, "utf8") : body.byteLength;
 }
 
-function describe(cause: unknown): string {
-  return cause instanceof Error ? cause.message : String(cause);
-}

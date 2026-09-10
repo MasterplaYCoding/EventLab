@@ -1,4 +1,5 @@
 import type { DeliveryOutcome, HttpRequestSpec } from "../types.js";
+import { describeCause } from "../internal/describeCause.js";
 
 export interface DeliverOptions {
   readonly url: URL;
@@ -64,7 +65,7 @@ export async function deliver(options: DeliverOptions): Promise<DeliveryOutcome>
     if (signal.aborted) {
       return { kind: "cancelled" };
     }
-    return { kind: "transport-error", message: describe(cause) };
+    return { kind: "transport-error", message: describeCause(cause) };
   } finally {
     clearTimeout(timer);
     signal.removeEventListener("abort", onCancel);
@@ -117,13 +118,3 @@ async function readBounded(
   return { text: Buffer.concat(chunks).toString("utf8"), truncated };
 }
 
-function describe(cause: unknown): string {
-  if (cause instanceof Error) {
-    const nested = (cause as { cause?: unknown }).cause;
-    if (nested instanceof Error && nested.message !== cause.message) {
-      return `${cause.message}: ${nested.message}`;
-    }
-    return cause.message;
-  }
-  return String(cause);
-}
