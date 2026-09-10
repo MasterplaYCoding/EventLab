@@ -9,6 +9,20 @@ between minor versions; each change will be listed here with a migration note.
 
 ### Added
 
+- `redaction.test.ts`: the report's redaction promise, tested by delivering
+  secrets rather than by constructing a fixture that already has none. A real
+  delivery carrying a provider signature, a bearer token and a card number, and
+  none of them appear in the report's JSON or in `formatReport` output — which
+  matters more, since that is what `assertRunPassed` throws into a CI log.
+  Header *names* and body *size* survive, because a missing signature header
+  and a truncated payload are both real bugs and neither needs the value.
+
+  It also pins the limit: **the request URL is recorded in full**, query string
+  included. That is a deliberate trade — a redacted URL would make a delivery
+  unidentifiable — but a provider that authenticates by query parameter puts a
+  credential in the report, and someone attaching one to a public issue should
+  know that before they do. The README's guarantees row now says so.
+
 - `packages/cli/test/html.test.ts`: the timeline is a file people forward, and
   everything in it — scenario names, attempt ids, URLs, assertion messages —
   comes from outside the process. Nothing tested the escaping that keeps that

@@ -186,6 +186,7 @@ Four outcome categories, deliberately never blended:
 | `assertions[]` | What your check said about your application |
 | `harnessError` | The experiment itself was invalid |
 | `cleanup` | Whether teardown completed: `ok`, `failed`, `skipped`, or `timed-out` |
+| `redaction` | What was withheld: request bodies are omitted, headers reduced to names. The URL is **not** redacted — see the guarantees table in the README |
 
 `passed` is true only when the delivery expectation held, every assertion
 passed, and teardown did not fail.
