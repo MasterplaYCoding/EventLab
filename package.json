@@ -25,5 +25,8 @@
     "typedoc": "^0.28.1",
     "typescript": "^5.8.3",
     "vitest": "^3.1.2"
+  },
+  "overrides": {
+    "multer": "2.3.0"
   }
 }

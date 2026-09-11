@@ -1,0 +1,24 @@
+{
+  "name": "@masterplaycoding/eventlab-example-frameworks",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Recipes: pointing EventLab at an Express, Fastify or NestJS webhook, each a runnable test.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --root ../.. examples/frameworks"
+  },
+  "dependencies": {
+    "@masterplaycoding/eventlab": "*",
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/core": "^12.0.1",
+    "@nestjs/platform-express": "^12.0.1",
+    "express": "^5.2.1",
+    "fastify": "^5.12.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6"
+  }
+}

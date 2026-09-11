@@ -21,6 +21,9 @@
     },
     {
       "path": "./examples/restart"
+    },
+    {
+      "path": "./examples/frameworks"
     }
   ]
 }

@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "composite": true,
+    "noEmit": false,
+    // NestJS's decorators are the legacy, TypeScript-only kind. Vitest
+    // compiles with esbuild, which reads this flag too; it cannot emit
+    // decorator metadata, which is why the Nest recipe injects by token.
+    "experimentalDecorators": true
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "references": [{ "path": "../../packages/core" }]
+}
