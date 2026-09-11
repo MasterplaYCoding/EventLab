@@ -5,7 +5,13 @@ All notable changes are recorded here. This project follows
 versioning. Until `1.0`, the public API and the report schema may change
 between minor versions; each change will be listed here with a migration note.
 
-## [Unreleased]
+## [0.3.0] - unreleased
+
+The date becomes real on the day it is tagged; see [RELEASING.md](RELEASING.md).
+
+Restarting the application under test mid-scenario, bounded teardown, and
+report schema `3` — the one change here that needs a consumer's attention; see
+*Changed* for the migration line.
 
 ### Added
 
