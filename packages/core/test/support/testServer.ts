@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { AddressInfo } from "node:net";
+import type { AddressInfo } from "node:net";
 
 export interface RecordedRequest {
   readonly method: string;
@@ -17,10 +17,15 @@ export interface TestServer {
   close: () => Promise<void>;
 }
 
+/**
+ * Returns `unknown` because the value is ignored - only a promise is awaited.
+ * `(_request, response) => response.end("ok")` returns the response, and the
+ * tests are clearer written that way than wrapped in braces to discard it.
+ */
 export type Handler = (
   request: IncomingMessage & { body: string },
   response: ServerResponse,
-) => void | Promise<void>;
+) => unknown;
 
 /**
  * A loopback HTTP server for executor tests.

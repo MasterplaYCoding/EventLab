@@ -38,7 +38,12 @@ function report(overrides: Partial<RunReport> = {}): RunReport {
     seed: 20260908,
     fixtureDigest: "sha256:8f2bcafe000000000000000000000000000000000000000000000000000000ff",
     plan,
-    limits: { requestTimeoutMs: 5000, scenarioTimeoutMs: 30000, maxResponseBodyBytes: 65536 },
+    limits: {
+      requestTimeoutMs: 5000,
+      scenarioTimeoutMs: 30000,
+      maxResponseBodyBytes: 65536,
+      teardownTimeoutMs: 5000,
+    },
     startedAt: "2026-09-08T00:00:00.000Z",
     wallClockMs: 42,
     attempts: [],

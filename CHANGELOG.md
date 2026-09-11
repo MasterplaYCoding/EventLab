@@ -121,6 +121,17 @@ between minor versions; each change will be listed here with a migration note.
   message quotes the offending input and a teardown message is whatever the
   hook threw.
 
+- **The library's own tests were never typechecked.** `packages/core` and
+  `packages/cli` compile `src/` only, and Vitest strips types without
+  checking them, so twenty type errors sat in the tests unseen. Most were
+  stale fixtures, but three made tests weaker than they read: two fixtures
+  built a timeout with `elapsedMs` (the field is `afterMs`), so the
+  timeline's "every outcome kind" test rendered `timeout after undefined ms`
+  and passed because it checked only ids; and `summariseStatuses` was tested
+  against a `network-error` outcome that does not exist, never against the
+  real `transport-error`. `npm run typecheck` now also checks
+  `tsconfig.test.json`, and that timeline test asserts what each row says.
+
 - **A scenario module that throws a non-Error reported `undefined`.** The
   loader read `.message` off whatever the import rejected with, so
   `throw "the database was unreachable"` in a scenario produced

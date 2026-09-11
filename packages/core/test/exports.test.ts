@@ -55,7 +55,12 @@ function report(attempts: AttemptReport[]): RunReport {
     seed: 1,
     fixtureDigest: `sha256:${"0".repeat(64)}`,
     plan,
-    limits: { requestTimeoutMs: 5000, scenarioTimeoutMs: 30000, maxResponseBodyBytes: 65536 },
+    limits: {
+      requestTimeoutMs: 5000,
+      scenarioTimeoutMs: 30000,
+      maxResponseBodyBytes: 65536,
+      teardownTimeoutMs: 5000,
+    },
     startedAt: "2026-09-10T00:00:00.000Z",
     wallClockMs: 10,
     attempts,
@@ -119,7 +124,7 @@ describe("countDeliveries", () => {
     // a separate question from whether the request arrived.
     const subject = report([
       attempt("evt_a", 0, responded(500)),
-      attempt("evt_a", 1, { kind: "timeout", elapsedMs: 5000 }),
+      attempt("evt_a", 1, { kind: "timeout", afterMs: 5000 }),
     ]);
 
     expect(countDeliveries(subject, "evt_a")).toBe(2);
@@ -143,14 +148,14 @@ describe("summariseStatuses", () => {
     // exists to refuse.
     const subject = report([
       attempt("evt_a", 0, responded(200)),
-      attempt("evt_a", 1, { kind: "timeout", elapsedMs: 5000 }),
-      attempt("evt_b", 2, { kind: "network-error", message: "ECONNRESET" }),
+      attempt("evt_a", 1, { kind: "timeout", afterMs: 5000 }),
+      attempt("evt_b", 2, { kind: "transport-error", message: "ECONNRESET" }),
     ]);
 
     expect(summariseStatuses(subject)).toEqual({
       "200": 1,
       timeout: 1,
-      "network-error": 1,
+      "transport-error": 1,
     });
   });
 

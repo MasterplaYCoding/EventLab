@@ -57,7 +57,12 @@ function report(overrides: Partial<RunReport> = {}): RunReport {
     seed: 1,
     fixtureDigest: `sha256:${"0".repeat(64)}`,
     plan,
-    limits: { requestTimeoutMs: 5000, scenarioTimeoutMs: 30000, maxResponseBodyBytes: 65536 },
+    limits: {
+      requestTimeoutMs: 5000,
+      scenarioTimeoutMs: 30000,
+      maxResponseBodyBytes: 65536,
+      teardownTimeoutMs: 5000,
+    },
     startedAt: "2026-09-10T00:00:00.000Z",
     wallClockMs: 10,
     attempts: [attempt()],
@@ -277,17 +282,25 @@ describe("legibility", () => {
         attempts: [
           attempt({ attemptId: "a#1", outcome: responded(200) }),
           attempt({ attemptId: "a#2", outcome: responded(500) }),
-          attempt({ attemptId: "a#3", outcome: { kind: "timeout", elapsedMs: 5000 } }),
+          attempt({ attemptId: "a#3", outcome: { kind: "timeout", afterMs: 5000 } }),
           attempt({
             attemptId: "a#4",
             outcome: { kind: "transport-error", message: "ECONNRESET" },
           }),
+          attempt({ attemptId: "a#5", outcome: { kind: "cancelled" } }),
         ],
       }),
     );
 
-    for (const id of ["a#1", "a#2", "a#3", "a#4"]) {
+    for (const id of ["a#1", "a#2", "a#3", "a#4", "a#5"]) {
       expect(html).toContain(id);
     }
+    // Ids alone prove a row exists, not that it says anything. This fixture
+    // once built its timeout with a field the type does not have, and the
+    // timeline printed "timeout after undefined ms" while the test passed.
+    expect(html).toContain("timeout after 5000 ms");
+    expect(html).toContain("transport error: ECONNRESET");
+    expect(html).toContain("cancelled");
+    expect(html).not.toContain("undefined");
   });
 });
