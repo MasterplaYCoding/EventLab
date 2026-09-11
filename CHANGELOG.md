@@ -33,6 +33,25 @@ between minor versions; each change will be listed here with a migration note.
 
 ### Changed
 
+- **A compatibility policy, [docs/compatibility.md](docs/compatibility.md),**
+  covering the three things people keep - saved plans, JSON reports and
+  code written against the API - plus the CLI, with the check behind every
+  promise.
+
+- **A shape change without a version bump now fails the build.** In 0.3 the
+  report gained `limits.teardownTimeoutMs` and a `timed-out` cleanup status
+  while `REPORT_SCHEMA_VERSION` stayed at 2, and only a careful reading of
+  the diff caught it. `versionedShapes.test.ts` reads the report's types and
+  the saved plan's types out of `etc/eventlab.api.md` - which `api:check`
+  keeps identical to the built declarations - and compares them with the
+  shape recorded for the current `REPORT_SCHEMA_VERSION` and
+  `PLANNER_VERSION`. Changing a shape therefore means bumping the version and
+  recording a new snapshot under `packages/core/test/versioned-shapes/`; the
+  old snapshots stay, as a history of every version's shape. Replaying the
+  0.3 mistake - a field added to `RunReport`, the API report regenerated, the
+  schema version left alone - fails with "the report shape changed but
+  REPORT_SCHEMA_VERSION is still 3. Bump it".
+
 - **Golden plans from the released packages.** The README's first
   guarantee - the same seed and inputs produce the same plan - was tested
   only within a build: the planner's property tests prove determinism and

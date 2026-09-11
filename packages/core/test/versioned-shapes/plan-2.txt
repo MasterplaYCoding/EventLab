@@ -1,0 +1,30 @@
+export interface DeliveryPlan {
+    readonly attempts: readonly DeliveryAttempt[];
+    readonly barriers: readonly PlanBarrier[];
+    readonly concurrency: number;
+    readonly fixtureDigest: string;
+    readonly plannerVersion: string;
+    readonly scenario: string;
+    readonly seed: number;
+    readonly transforms: readonly TransformRecord[];
+}
+
+export interface DeliveryAttempt {
+    readonly attemptId: string;
+    readonly copyIndex: number;
+    readonly delayMs: number;
+    readonly eventId: string;
+    readonly order: number;
+    readonly phase: number;
+}
+
+export interface PlanBarrier {
+    readonly afterPhase: number;
+    readonly checkpoint?: string;
+    readonly name: string;
+}
+
+export interface TransformRecord {
+    readonly kind: string;
+    readonly options: Readonly<Record<string, number | string | boolean>>;
+}

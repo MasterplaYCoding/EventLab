@@ -1,0 +1,125 @@
+export interface RunReport {
+    readonly assertions: readonly AssertionReport[];
+    readonly attempts: readonly AttemptReport[];
+    readonly barriers: readonly BarrierReport[];
+    readonly cleanup: {
+        readonly status: "ok" | "failed" | "skipped" | "timed-out";
+        readonly message?: string;
+    };
+    readonly expectation: DeliveryExpectation;
+    readonly fixtureDigest: string;
+    readonly harnessError?: {
+        readonly code: string;
+        readonly message: string;
+        readonly at?: string;
+    };
+    readonly limits: RunLimits;
+    readonly passed: boolean;
+    readonly plan: DeliveryPlan;
+    readonly plannerVersion: string;
+    readonly redaction: {
+        readonly requestBodies: "omitted";
+        readonly requestHeaders: "names-only";
+    };
+    readonly reportSchemaVersion: string;
+    readonly reproduce: {
+        readonly note: string;
+    };
+    readonly scenario: string;
+    readonly seed: number;
+    readonly startedAt: string;
+    readonly wallClockMs: number;
+}
+
+export interface AttemptReport {
+    readonly attemptId: string;
+    readonly copyIndex: number;
+    readonly durationMs: number;
+    readonly eventId: string;
+    readonly intendedStartMs: number;
+    readonly observedStartMs: number;
+    readonly order: number;
+    readonly outcome: DeliveryOutcome;
+    readonly request: {
+        readonly method: string;
+        readonly url: string;
+        readonly headerNames: readonly string[];
+        readonly bodyBytes: number;
+    };
+}
+
+export interface AssertionReport {
+    readonly durationMs: number;
+    readonly kind: "check" | "eventually";
+    readonly message?: string;
+    readonly name: string;
+    readonly polls?: number;
+    readonly status: "passed" | "failed" | "timed-out";
+}
+
+export interface BarrierReport {
+    readonly afterPhase: number;
+    readonly attemptsBefore: number;
+    readonly checkpoint?: string;
+    readonly durationMs: number;
+    readonly message?: string;
+    readonly name: string;
+    readonly status: "passed" | "failed" | "skipped";
+}
+
+export type DeliveryOutcome = {
+    readonly kind: "response";
+    readonly status: number;
+    readonly bodyPreview: string;
+    readonly bodyTruncated: boolean;
+} | {
+    readonly kind: "timeout";
+    readonly afterMs: number;
+} | {
+    readonly kind: "transport-error";
+    readonly message: string;
+} | {
+    readonly kind: "cancelled";
+};
+
+export interface RunLimits {
+    readonly maxResponseBodyBytes: number;
+    readonly requestTimeoutMs: number;
+    readonly scenarioTimeoutMs: number;
+    readonly teardownTimeoutMs: number;
+}
+
+export interface DeliveryExpectation {
+    readonly deliveries: "all-2xx" | "declared";
+}
+
+export interface DeliveryPlan {
+    readonly attempts: readonly DeliveryAttempt[];
+    readonly barriers: readonly PlanBarrier[];
+    readonly concurrency: number;
+    readonly fixtureDigest: string;
+    readonly plannerVersion: string;
+    readonly scenario: string;
+    readonly seed: number;
+    readonly transforms: readonly TransformRecord[];
+}
+
+export interface DeliveryAttempt {
+    readonly attemptId: string;
+    readonly copyIndex: number;
+    readonly delayMs: number;
+    readonly eventId: string;
+    readonly order: number;
+    readonly phase: number;
+}
+
+export interface PlanBarrier {
+    readonly afterPhase: number;
+    readonly checkpoint?: string;
+    readonly name: string;
+}
+
+export interface TransformRecord {
+    readonly kind: string;
+    readonly options: Readonly<Record<string, number | string | boolean>>;
+}

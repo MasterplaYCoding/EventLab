@@ -212,7 +212,7 @@ ends up in*.
 | `0.2` | Explicit barriers, a barrier-only example, durable inbox/outbox crash recovery, and the `eventlab` CLI with an HTML timeline | **released** |
 | `0.3` | Restarting the application mid-scenario, and an example that needs it | **released** |
 | `0.4` | Recipes for Express, Fastify, NestJS and Next.js, each a runnable test | **implemented**, release pending |
-| `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
+| `1.0` | Stable API and report schema, compatibility policy, complete recipes | **in progress** — the policy, API-report checking, versioned-shape checks, golden plans and four framework recipes are implemented; 1.0 itself is the promise that the API stops changing |
 
 `0.4` also listed benchmarks. They were dropped in favour of **ceiling
 tests**, which fail the build rather than report a number: a response body
@@ -225,6 +225,7 @@ something was on one machine; these say what must not happen on any.
 - [Quickstart](docs/quickstart.md) — including how to get your app onto loopback.
 - [Recipes](docs/recipes.md) — Express, Fastify, NestJS and Next.js, each a runnable test.
 - [The command line](docs/cli.md) — `run`, `replay`, `report`, and the HTML timeline.
+- [Compatibility](docs/compatibility.md) — what stays stable between versions — saved plans, reports, the API, the CLI — and what enforces each promise.
 - [Concepts](docs/concepts.md)
 - [API reference](docs/api.md) — every export, the error codes, the limits.
 - [Troubleshooting](docs/troubleshooting.md) — start here when a run confuses you.
