@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { ScenarioError, loadScenario } from "../src/scenario.js";
+import { scratchDirectory } from "./support/scratch.js";
 
 /**
  * The loader's whole job is the first thirty seconds of someone's experience.
@@ -18,7 +18,7 @@ import { ScenarioError, loadScenario } from "../src/scenario.js";
 let workspace: string;
 
 beforeEach(() => {
-  workspace = mkdtempSync(join(tmpdir(), "eventlab-scenario-"));
+  workspace = scratchDirectory("scenario-");
 });
 
 afterEach(() => {

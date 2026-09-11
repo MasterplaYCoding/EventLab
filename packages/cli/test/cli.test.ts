@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -8,6 +7,7 @@ import type { AddressInfo } from "node:net";
 import { REPORT_SCHEMA_VERSION } from "@masterplaycoding/eventlab";
 
 import { EXIT_FAILED, EXIT_HARNESS, EXIT_OK, run } from "../src/index.js";
+import { scratchDirectory } from "./support/scratch.js";
 
 let workspace: string;
 let server: Server | undefined;
@@ -22,7 +22,7 @@ const stdout = () => out.join("\n");
 const stderr = () => err.join("\n");
 
 beforeEach(async () => {
-  workspace = mkdtempSync(join(tmpdir(), "eventlab-cli-"));
+  workspace = scratchDirectory("cli-");
   out.length = 0;
   err.length = 0;
   received = 0;

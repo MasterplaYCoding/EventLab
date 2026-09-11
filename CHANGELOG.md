@@ -33,6 +33,17 @@ between minor versions; each change will be listed here with a migration note.
 
 ### Changed
 
+- **Vitest 5** (from 3), which clears the one advisory `npm audit` reported
+  (GHSA-82fw-gwwq-j7x9, in `@vitest/mocker`; development only - neither
+  published package depends on Vitest). It also exposed that fourteen CLI
+  tests had been passing on a resolution path no user has: they wrote
+  scenario modules to the OS temp directory, where
+  `import "@masterplaycoding/eventlab"` cannot resolve, and Vitest 3 resolved
+  it for them. The CLI loads scenarios with Node's own `import()`, which
+  resolves from the scenario's directory like any user's project would. The
+  tests now write scenarios inside the repository (under the gitignored
+  `.eventlab/`), so they exercise that path.
+
 - **Benchmarks are off the roadmap**, replaced by the ceiling tests already
   in the suite — the response-body and teardown bounds — which fail the build
   instead of reporting a number. The README's `0.4` row says so.
