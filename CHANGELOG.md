@@ -82,6 +82,16 @@ between minor versions; each change will be listed here with a migration note.
   `docs/api.md` described `scenarioTimeoutMs` as bounding the "whole run".
   It never bounded teardown; it now says so.
 
+  A timed-out teardown **fails the run**, as a teardown that throws always
+  has, and `formatReport` prints it as `teardown timed out:`. As first
+  written, `passed` only excluded `failed`, so an overrun left the run green
+  and the formatted report said nothing — CI would print ✓ and then hang on
+  exit, which is the exact "no hint of the cause" this fix set out to remove.
+  `passed` now lists the acceptable statuses (`ok`, `skipped`) instead of the
+  unacceptable one, so a status added later fails until someone decides
+  otherwise. The teardown line is printed after a harness error too, because
+  it is what explains the hang that follows one.
+
 - **A large response body cost the whole request timeout.** Once the response
   reader reached `maxResponseBodyBytes` it marked the preview truncated and
   then carried on reading to the end of the body, discarding everything it

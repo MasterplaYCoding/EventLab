@@ -262,7 +262,11 @@ export async function runPlan(plan: DeliveryPlan, options: RunOptions): Promise<
     expectation,
     passed:
       harnessError === undefined &&
-      cleanup.status !== "failed" &&
+      // Listed by what is acceptable rather than by what is not: a teardown
+      // that overran is at least as bad as one that threw - whatever it held
+      // is still held - and a status added later should fail until someone
+      // decides otherwise.
+      (cleanup.status === "ok" || cleanup.status === "skipped") &&
       meetsDeliveryExpectation(attempts, expectation.deliveries) &&
       barrierReports.every((report) => report.status === "passed") &&
       assertionReports.every((report) => report.status === "passed"),

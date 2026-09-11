@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 
 import { createPlan } from "../src/plan/createPlan.js";
 import { runPlan } from "../src/run/runPlan.js";
+import { assertRunPassed, formatReport } from "../src/report/format.js";
 
 /**
  * Teardown runs last, and used to run unbounded.
@@ -111,6 +112,32 @@ describe("a teardown that never finishes", () => {
     expect(report.attempts[0]?.outcome).toMatchObject({ kind: "response", status: 200 });
     expect(report.assertions[0]?.status).toBe("passed");
     expect(report.harnessError).toBeUndefined();
+
+    released?.();
+  });
+
+  it("fails the run, as a teardown that throws does, and says why", async () => {
+    await startTarget();
+    let released: (() => void) | undefined;
+    const stuck = new Promise<void>((resolve) => {
+      released = resolve;
+    });
+
+    const report = await runPlan(plan, {
+      events,
+      target: { baseUrl, request },
+      hooks: { teardown: () => stuck },
+      limits: { teardownTimeoutMs: 200 },
+      assertions: [{ name: "the target answered", check: () => {} }],
+    });
+
+    // Every assertion is green, so the only thing standing between this run
+    // and a pass is the hook it could not finish. A hook that overran holds
+    // whatever it held - that is worse than one that threw, not better - and
+    // the CI log is where a reader has to find out why the job then hangs.
+    expect(report.passed).toBe(false);
+    expect(formatReport(report)).toContain("teardown timed out");
+    expect(() => assertRunPassed(report)).toThrow("still running");
 
     released?.();
   });

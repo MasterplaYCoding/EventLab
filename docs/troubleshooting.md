@@ -90,8 +90,9 @@ If non-2xx responses are the point of your scenario, declare it:
 expect: { deliveries: "declared" }
 ```
 
-Also check `report.cleanup`: a failing `teardown` sets `passed` to false while
-leaving every assertion green.
+Also check `report.cleanup`: a `teardown` that threw or timed out sets `passed`
+to false while leaving every assertion green. `formatReport` prints it as
+`teardown failed:` or `teardown timed out:`.
 
 ---
 

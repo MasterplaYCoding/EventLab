@@ -189,7 +189,8 @@ Four outcome categories, deliberately never blended:
 | `redaction` | What was withheld: request bodies are omitted, headers reduced to names. The URL is **not** redacted — see the guarantees table in the README |
 
 `passed` is true only when the delivery expectation held, every assertion
-passed, and teardown did not fail.
+passed, and teardown either completed or was skipped — `failed` and `timed-out`
+both fail the run.
 
 ## Errors
 

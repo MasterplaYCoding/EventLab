@@ -195,6 +195,34 @@ describe("formatReport", () => {
     expect(rendered).toContain("teardown failed: could not drop schema");
   });
 
+  it("surfaces a teardown that timed out, the reason a process will not exit", () => {
+    const rendered = formatReport(
+      report({
+        attempts: [ok(0)],
+        assertions: [passing("invariant")],
+        passed: false,
+        cleanup: { status: "timed-out", message: "teardown did not finish within 5000ms" },
+      }),
+    );
+
+    expect(rendered).toContain("teardown timed out: teardown did not finish within 5000ms");
+  });
+
+  it("still surfaces a teardown problem after a harness error", () => {
+    // The harness error explains the verdict; the teardown line explains the
+    // hang that follows it. Dropping either leaves the reader guessing.
+    const rendered = formatReport(
+      report({
+        passed: false,
+        harnessError: { code: "ScenarioTimeout", message: "the run exceeded 30000ms" },
+        cleanup: { status: "timed-out", message: "teardown did not finish within 5000ms" },
+      }),
+    );
+
+    expect(rendered).toContain("⚠ harness error: ScenarioTimeout");
+    expect(rendered).toContain("teardown timed out");
+  });
+
   it("says so when a scenario declared no assertions", () => {
     expect(formatReport(report({ attempts: [ok(0)] }))).toContain("no assertions declared");
   });

@@ -47,7 +47,8 @@ setup → reset → scheduled deliveries → assertions → teardown
 `teardown` is bounded by `teardownTimeoutMs` (5 s by default) rather than by
 the scenario budget, because it runs after that budget is spent — a run that
 timed out still has to be cleaned up. When it overruns, `cleanup.status` is
-`timed-out` and the run reports normally. Read that as *EventLab stopped
+`timed-out`, the run still returns its report, and that report does not pass.
+Read `timed-out` as *EventLab stopped
 waiting*, not as *the hook was stopped*: a promise that never settles cannot be
 cancelled from outside, so whatever it was holding it is still holding, and a
 process that will not exit afterwards is the visible symptom.
@@ -91,7 +92,8 @@ was misconfigured" and "my code is wrong" look identical in CI.
 
 - the declared delivery expectation held,
 - every assertion passed, and
-- teardown did not fail.
+- teardown completed, or there was none: a teardown that threw or overran its
+  budget fails the run even when every assertion is green.
 
 With no declared expectation, the default requires all deliveries to be 2xx.
 Scenarios that intend to provoke rejections must declare

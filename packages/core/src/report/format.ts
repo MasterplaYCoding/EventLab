@@ -40,6 +40,7 @@ export function formatReport(report: RunReport, options: FormatReportOptions = {
     }
     lines.push("");
     lines.push(`  ${describeDeliveries(report)}`);
+    lines.push(...describeCleanup(report));
     lines.push(`  ${describeProvenance(report, options)}`);
     lines.push("");
     lines.push("  This is an EventLab problem, not a failure of the application under test.");
@@ -62,12 +63,7 @@ export function formatReport(report: RunReport, options: FormatReportOptions = {
 
   lines.push("");
   lines.push(`  ${describeDeliveries(report)}`);
-
-  if (report.cleanup.status === "failed") {
-    // Also forces passed === false, and is otherwise invisible.
-    lines.push(`  teardown failed: ${report.cleanup.message ?? "no reason given"}`);
-  }
-
+  lines.push(...describeCleanup(report));
   lines.push(`  ${describeProvenance(report, options)}`);
 
   if (options.timings === true) {
@@ -162,6 +158,26 @@ function unmetExpectation(report: RunReport): string {
       attempt.outcome.status < 300,
   );
   return allSucceeded ? "" : " — expected all 2xx";
+}
+
+/**
+ * A teardown problem, when there was one.
+ *
+ * Both forces `passed` to false and is otherwise invisible: every assertion can
+ * be green. A teardown that overran matters even after a harness error, because
+ * it is the reason the process may not exit, and a reader staring at a hung CI
+ * job should find that here rather than guess.
+ */
+function describeCleanup(report: RunReport): string[] {
+  // Defensive, like barriers: a display function given an older report.
+  const cleanup = report.cleanup ?? { status: "skipped" };
+  if (cleanup.status === "failed") {
+    return [`  teardown failed: ${cleanup.message ?? "no reason given"}`];
+  }
+  if (cleanup.status === "timed-out") {
+    return [`  teardown timed out: ${cleanup.message ?? "it did not finish in time"}`];
+  }
+  return [];
 }
 
 function describeProvenance(report: RunReport, options: FormatReportOptions): string {
