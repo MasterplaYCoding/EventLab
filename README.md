@@ -205,7 +205,7 @@ ends up in*.
 |---|---|---|
 | `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples | **implemented** |
 | `0.2` | Explicit barriers, a barrier-only example, durable inbox/outbox crash recovery, and the `eventlab` CLI with an HTML timeline | **released** |
-| `0.3` | Restarting the application mid-scenario, and an example that needs it | **implemented**, release pending |
+| `0.3` | Restarting the application mid-scenario, and an example that needs it | **released** |
 | `0.4` | Benchmarks, recipes for unfamiliar frameworks | planned |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
 
