@@ -72,6 +72,9 @@ export function renderHtml(report: RunReport): string {
     fixtures ${escape(report.fixtureDigest)} · ${report.attempts.length} deliveries
   </p>
 
+  ${harnessProblem(report)}
+  ${teardownProblem(report)}
+
   ${section("Assertions", report.assertions.length === 0
     ? `<p class="msg">none declared</p>`
     : `<ul>${report.assertions
@@ -133,6 +136,39 @@ export function renderHtml(report: RunReport): string {
 </main>
 </html>
 `;
+}
+
+/**
+ * Why the experiment never happened, when it did not.
+ *
+ * Without this a harness error renders as "failed" above an empty assertion
+ * list - a verdict with no reason, and one that reads as the application's
+ * fault when it was the scenario's.
+ */
+function harnessProblem(report: RunReport): string {
+  const error = report.harnessError;
+  if (error === undefined) return "";
+  return section(
+    "Harness error",
+    `<p>${mark(false)} ${escape(error.code)}</p>` +
+      `<div class="msg">${escape(error.message)}</div>` +
+      (error.at === undefined ? "" : `<div class="msg">at ${escape(error.at)}</div>`) +
+      `<p class="msg">This is an EventLab problem, not a failure of the application ` +
+      `under test.</p>`,
+  );
+}
+
+/** A teardown that threw or overran: it fails the run with every check green. */
+function teardownProblem(report: RunReport): string {
+  const cleanup = report.cleanup;
+  if (cleanup === undefined || (cleanup.status !== "failed" && cleanup.status !== "timed-out")) {
+    return "";
+  }
+  return section(
+    "Teardown",
+    `<p>${mark(false)} ${cleanup.status === "failed" ? "failed" : "timed out"}</p>` +
+      (cleanup.message === undefined ? "" : `<div class="msg">${escape(cleanup.message)}</div>`),
+  );
 }
 
 function section(title: string, body: string): string {

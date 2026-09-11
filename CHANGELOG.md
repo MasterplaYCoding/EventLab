@@ -112,6 +112,15 @@ between minor versions; each change will be listed here with a migration note.
   the target writes under 4 MiB rather than 32. The connection is no longer
   reusable afterwards, which is the intended trade and is stated in the README.
 
+- **The HTML timeline showed "failed" without a reason** whenever the reason
+  was not an assertion. It never rendered `harnessError` or `cleanup`, so a
+  blocked target, a failed setup or a teardown that threw produced a red
+  verdict above an empty or entirely green assertion list — a timeline that
+  sent its reader to the JSON, which is the one thing it exists to spare them.
+  Both now get a section, escaped like everything else, since a harness
+  message quotes the offending input and a teardown message is whatever the
+  hook threw.
+
 - **A scenario module that throws a non-Error reported `undefined`.** The
   loader read `.message` off whatever the import rejected with, so
   `throw "the database was unreachable"` in a scenario produced

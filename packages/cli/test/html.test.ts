@@ -134,6 +134,21 @@ describe("escaping", () => {
     expect(html).not.toContain("<script>alert");
   });
 
+  it("escapes a harness error and a teardown message", () => {
+    // Both carry text from outside the process: a harness message quotes the
+    // offending URL or export, a teardown message is whatever the hook threw.
+    const html = renderHtml(
+      report({
+        passed: false,
+        harnessError: { code: "RemoteTargetBlocked", message: INJECTION, at: INJECTION },
+        cleanup: { status: "failed", message: INJECTION },
+      }),
+    );
+
+    expect(html).not.toContain("<script>alert");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
   it("escapes ampersands before the entities it introduces", () => {
     // The order matters: escaping < before & would turn "<" into "&lt;" and
     // then into "&amp;lt;", rendering the entity as literal text.
@@ -177,6 +192,48 @@ describe("legibility", () => {
     // Someone reading this without seeing colour still learns the outcome.
     expect(html).toContain("failed");
     expect(html).toContain("the invariant holds");
+  });
+
+  it("says why a run failed when no assertion did", () => {
+    // Each of these fails the run with an empty or all-green assertion list.
+    // A timeline showing "failed" and nothing else sends the reader to the
+    // JSON, which is what the timeline exists to spare them.
+    const harness = renderHtml(
+      report({
+        passed: false,
+        harnessError: {
+          code: "RemoteTargetBlocked",
+          message: 'refusing to deliver to non-loopback host "example.com"',
+          at: "target.baseUrl",
+        },
+      }),
+    );
+    expect(harness).toContain("Harness error");
+    expect(harness).toContain("RemoteTargetBlocked");
+    expect(harness).toContain("at target.baseUrl");
+    expect(harness).toContain("not a failure of the application");
+
+    const overran = renderHtml(
+      report({
+        passed: false,
+        cleanup: { status: "timed-out", message: "teardown did not finish within 5000ms" },
+      }),
+    );
+    expect(overran).toContain("Teardown");
+    expect(overran).toContain("timed out");
+    expect(overran).toContain("did not finish within 5000ms");
+
+    const threw = renderHtml(
+      report({ passed: false, cleanup: { status: "failed", message: "schema was gone" } }),
+    );
+    expect(threw).toContain("schema was gone");
+  });
+
+  it("stays quiet about teardown and the harness when both were fine", () => {
+    const html = renderHtml(report({ cleanup: { status: "skipped" } }));
+
+    expect(html).not.toContain("Harness error");
+    expect(html).not.toContain("<h2>Teardown</h2>");
   });
 
   it("renders a run in which nothing was delivered", () => {

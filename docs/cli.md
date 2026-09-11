@@ -112,6 +112,10 @@ that cannot tell them apart teaches people to ignore both.
 One standalone file. No server, no network requests, no analytics — you can
 email it or attach it to an issue.
 
+A run that failed with no failing assertion says why: a harness error and a
+teardown that threw or timed out each get their own section above the
+timeline.
+
 It groups attempts by logical event, so three deliveries of one event read as
 one row rather than three unrelated bars, and it shows intended and observed
 start times separately because the plan is deterministic and the run is not.
