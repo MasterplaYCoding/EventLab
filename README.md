@@ -167,6 +167,10 @@ cd EventLab && npm ci && npm test
 - [`examples/restart`](examples/restart) — a handler that deduplicates in
   memory. Correct for as long as the process keeps running, and wrong the
   moment it is replaced.
+- [`examples/frameworks`](examples/frameworks) — [recipes](docs/recipes.md)
+  for Express, Fastify, NestJS and Next.js: ephemeral loopback port, the raw
+  body a signature is computed over, and a clean shutdown, each a runnable
+  test against one shared scenario.
 
 ## Five-minute quickstart
 
@@ -206,12 +210,19 @@ ends up in*.
 | `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples | **implemented** |
 | `0.2` | Explicit barriers, a barrier-only example, durable inbox/outbox crash recovery, and the `eventlab` CLI with an HTML timeline | **released** |
 | `0.3` | Restarting the application mid-scenario, and an example that needs it | **released** |
-| `0.4` | Benchmarks, recipes for unfamiliar frameworks | planned |
+| `0.4` | Recipes for Express, Fastify, NestJS and Next.js, each a runnable test | **implemented**, release pending |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | planned |
+
+`0.4` also listed benchmarks. They were dropped in favour of **ceiling
+tests**, which fail the build rather than report a number: a response body
+past `maxResponseBodyBytes` is abandoned, not drained, and a `teardown` that
+never returns still produces a report. A benchmark tells you how fast
+something was on one machine; these say what must not happen on any.
 
 ## Documentation
 
 - [Quickstart](docs/quickstart.md) — including how to get your app onto loopback.
+- [Recipes](docs/recipes.md) — Express, Fastify, NestJS and Next.js, each a runnable test.
 - [The command line](docs/cli.md) — `run`, `replay`, `report`, and the HTML timeline.
 - [Concepts](docs/concepts.md)
 - [API reference](docs/api.md) — every export, the error codes, the limits.

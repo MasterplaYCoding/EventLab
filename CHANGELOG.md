@@ -7,6 +7,47 @@ between minor versions; each change will be listed here with a migration note.
 
 ## [Unreleased]
 
+### Added
+
+- **Framework recipes, each a runnable test.** `examples/frameworks` points
+  EventLab at a webhook served by Express 5, Fastify 5 and NestJS 12, and
+  `examples/frameworks/nextjs` at a Next.js 16 route handler through a real
+  Next server. One scenario runs unchanged against all four, and every recipe
+  must fulfil each order once under duplicate, concurrent deliveries; accept a
+  signature over a pretty-printed body, which only works if the route reads
+  the raw bytes; refuse the same deliveries signed with the wrong key; and
+  listen on loopback, finish `teardown` inside its budget, and release its
+  port. Each of those was confirmed to fail when the recipe gets it wrong —
+  JSON parsing instead of raw, no signature check, no deduplication, a close
+  that does not close, Nest without `rawBody`, Fastify without its buffer
+  parser, and a Next route that calls `request.json()` first.
+
+  `pitfalls.test.ts` makes the two raw-body mistakes on purpose and shows how
+  EventLab reports them; `scoping.test.ts` checks that the raw-body handling
+  stays on the webhook route and the rest of the app still gets parsed JSON.
+  [docs/recipes.md](docs/recipes.md) walks through all four.
+
+  Next.js is kept out of the workspace: it is a ~300 MB install plus a build,
+  so it has its own package and lockfile, its own CI job on Ubuntu, and
+  `npm run test:nextjs`. The other three run in `npm test` on every platform.
+
+### Changed
+
+- **Benchmarks are off the roadmap**, replaced by the ceiling tests already
+  in the suite — the response-body and teardown bounds — which fail the build
+  instead of reporting a number. The README's `0.4` row says so.
+
+### Fixed
+
+- **The quickstart's loopback section could not work as written.** It showed
+  an app started in `hooks.setup` alongside a `baseUrl` known in advance — but
+  EventLab resolves `baseUrl` *before* `setup`, so an app on an ephemeral port
+  has no address to give at that point. It also said to shut down in
+  `teardown` while its snippet shut down in `afterEach`, and bound every
+  interface rather than loopback. It now starts the app before `runPlan`,
+  closes it in `teardown`, listens on `127.0.0.1`, and links the recipes,
+  which are where that shape is tested.
+
 ## [0.3.0] - 2026-09-11
 
 Restarting the application under test mid-scenario, bounded teardown, and

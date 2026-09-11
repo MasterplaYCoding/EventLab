@@ -77,7 +77,8 @@ it and records what it says.
 import { runPlan } from "@masterplaycoding/eventlab";
 
 // e.g. `http://127.0.0.1:${server.address().port}` after starting your app on
-// an ephemeral port. See "Getting your app onto loopback" below.
+// an ephemeral port - *before* calling runPlan, which resolves baseUrl before
+// it runs setup. See "Getting your app onto loopback" below.
 declare const baseUrl: string;
 declare function sign(body: string): string;
 
@@ -97,9 +98,9 @@ const report = await runPlan(plan, {
     }),
   },
   hooks: {
-    setup: () => startApp(),
+    setup: () => migrateTestDatabase(),
     reset: () => truncateTestData(),
-    teardown: () => stopApp(),
+    teardown: () => stopApp(),     // reported as cleanup; bounded by teardownTimeoutMs
   },
   assertions: [
     {
@@ -187,32 +188,35 @@ EventLab delivers over HTTP to a URL, so the only requirement is that your
 application is listening on one. It does not need to know what framework you
 use, and you do not need to change your application to test it.
 
-The shape is the same everywhere: start on an **ephemeral port** (port `0`, and
-ask the server what it got), hand that URL to the target, and shut down in
-`teardown`.
+The shape is the same everywhere: start on an **ephemeral loopback port**
+(port `0` on `127.0.0.1`, then ask the server what it got) *before* calling
+`runPlan`, hand that URL to the target, and shut down in `teardown`.
 
 ```ts
-import { afterEach, beforeEach, expect, it } from "vitest";
 import type { AddressInfo } from "node:net";
 
-let server: import("node:http").Server;
-let baseUrl: string;
+// Express shown; Fastify, NestJS and Next.js are in docs/recipes.md.
+const server = app.listen(0, "127.0.0.1");
+await new Promise((resolve) => server.once("listening", resolve));
+const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 
-beforeEach(async () => {
-  // Express: app.listen(0). Fastify: await app.listen({ port: 0 }).
-  // Nest: await app.listen(0). Anything with a listen() works.
-  server = app.listen(0);
-  await new Promise((resolve) => server.once("listening", resolve));
-  baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-});
-
-afterEach(async () => {
-  await new Promise((resolve) => server.close(resolve));
+const report = await runPlan(plan, {
+  events,
+  target: { baseUrl, request },
+  hooks: { teardown: () => new Promise((resolve) => server.close(resolve)) },
 });
 ```
 
 Port `0` matters more than it looks: a fixed port makes tests fail when they
 run in parallel, or when something else on the machine happens to hold it.
+Starting first matters too: EventLab resolves `baseUrl` before it runs
+`setup`, and an ephemeral port has no address until the app is listening.
+Closing in `teardown` rather than `afterEach` puts the shutdown in the report,
+where a close that hangs fails the run instead of hanging the test runner.
+
+[Recipes](recipes.md) does this for **Express, Fastify, NestJS and Next.js**,
+each as a runnable test — including reading the raw body a webhook signature
+is computed over, which is where the frameworks really differ.
 
 If your application is already running elsewhere — a `docker compose` service,
 a dev server — just point `baseUrl` at it and use `hooks.reset` to clear state
@@ -221,6 +225,7 @@ between scenarios. Remember that non-loopback hosts require
 
 ## What to read next
 
+- [Recipes](recipes.md) — Express, Fastify, NestJS and Next.js, each a runnable test.
 - [Concepts](concepts.md) — the five types and how a run is sequenced.
 - [API reference](api.md) — every export, including the error codes and limits.
 - [Troubleshooting](troubleshooting.md) — start here when a run confuses you.
