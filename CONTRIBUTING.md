@@ -5,10 +5,17 @@
 ```bash
 npm ci
 npm run typecheck
+npm run api:check
 npm test
 npm run verify:packaged
 npm run docs
 ```
+
+`api:check` compares the exported signatures with the committed reports in
+`packages/*/etc/*.api.md`. If you changed the public API on purpose, run
+`npm run api` to regenerate them and commit the diff with the change - the
+reviewer reads that diff as the API change. If you did not mean to, the check
+has just told you something.
 
 Node 22 or 24. No database, no Docker and no cloud account is needed for
 anything in the repository today.

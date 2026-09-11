@@ -32,7 +32,10 @@ export interface Streams {
   readonly err: (line: string) => void;
 }
 
-export const USAGE = `eventlab — run, replay and render EventLab scenarios
+// Typed as string, not inferred as its literal: the wording of the help is
+// not API, and the API report (etc/eventlab-cli.api.md) should not change
+// every time a sentence does.
+export const USAGE: string = `eventlab — run, replay and render EventLab scenarios
 
 Usage:
   eventlab run    <scenario.js> [--json <file>] [--html <file>]

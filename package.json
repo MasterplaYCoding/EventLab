@@ -18,9 +18,12 @@
     "test:watch": "vitest",
     "verify:packaged": "node scripts/verify-packaged-install.mjs",
     "docs": "typedoc",
-    "test:nextjs": "npm run build --prefix examples/frameworks/nextjs && tsc -p examples/frameworks/nextjs/tsconfig.check.json && vitest run --config examples/frameworks/nextjs/vitest.config.ts"
+    "test:nextjs": "npm run build --prefix examples/frameworks/nextjs && tsc -p examples/frameworks/nextjs/tsconfig.check.json && vitest run --config examples/frameworks/nextjs/vitest.config.ts",
+    "api": "api-extractor run --local -c packages/core/api-extractor.json && api-extractor run --local -c packages/cli/api-extractor.json",
+    "api:check": "api-extractor run -c packages/core/api-extractor.json && api-extractor run -c packages/cli/api-extractor.json"
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.59.1",
     "@types/node": "^22.15.3",
     "fast-check": "^3.23.2",
     "typedoc": "^0.28.1",

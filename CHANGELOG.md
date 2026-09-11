@@ -33,6 +33,18 @@ between minor versions; each change will be listed here with a migration note.
 
 ### Changed
 
+- **The public API is a committed file.** `packages/core/etc/eventlab.api.md`
+  and `packages/cli/etc/eventlab-cli.api.md` are API Extractor reports of
+  every exported signature, and `npm run api:check` - in CI and before every
+  release - fails when the built declarations no longer match them. Changing
+  the API now means running `npm run api` and committing the diff, so it is
+  reviewed rather than a side effect; the check was confirmed to fail on a
+  single stray `export const`. Two small corrections came with it: a
+  `{@link phases}` in `CreatePlanOptions` that pointed nowhere, and the CLI's
+  `USAGE`, which was exported as a string *literal* type - making every
+  wording change to `--help` a change to the public API. It is typed
+  `string`; the exit codes stay literal, because those are the contract.
+
 - **Vitest 5** (from 3), which clears the one advisory `npm audit` reported
   (GHSA-82fw-gwwq-j7x9, in `@vitest/mocker`; development only - neither
   published package depends on Vitest). It also exposed that fourteen CLI

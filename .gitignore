@@ -6,3 +6,5 @@ coverage/
 *.log
 .DS_Store
 docs/api-generated/
+# API Extractor scratch output; the reviewed reports live in packages/*/etc/.
+packages/*/temp/

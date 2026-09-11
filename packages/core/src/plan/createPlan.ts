@@ -36,7 +36,7 @@ export interface CreatePlanOptions {
   /**
    * Applied to all events, in declaration order.
    *
-   * Mutually exclusive with {@link phases}: a single-phase plan is the common
+   * Mutually exclusive with {@link CreatePlanOptions.phases}: a single-phase plan is the common
    * case and does not need the ceremony.
    */
   readonly transforms?: readonly Transform[];

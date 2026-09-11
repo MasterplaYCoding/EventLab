@@ -42,6 +42,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Public API matches the committed report
+        run: npm run api:check
+
       # The same check CI runs, reused as the release gate: it packs the
       # tarball, installs it into a clean directory and runs the README
       # example against it. Publishing something that fails this would be

@@ -38,6 +38,14 @@ jobs:
       - name: Unit and example tests
         run: npm test
 
+      # The public API is whatever packages/*/etc/*.api.md says it is. A change
+      # to an exported signature fails here until the report is regenerated
+      # (npm run api) and committed - so an API change is a reviewed diff, never
+      # a side effect. Platform-independent, so it runs once.
+      - name: Public API matches the committed report
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
+        run: npm run api:check
+
       # A docs script that fails is worse than no docs script, and this one
       # already caught a public type that was reachable but not exported.
       - name: Generate API documentation
