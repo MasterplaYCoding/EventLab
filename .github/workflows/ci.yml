@@ -50,6 +50,32 @@ jobs:
       - name: Verify packaged install and README example
         run: npm run verify:packaged
 
+  # The Next.js recipe, on its own. Next is a ~300 MB install plus a build,
+  # so it has a separate package and lockfile rather than joining the
+  # workspace, and the six jobs above never install it. One platform is
+  # enough: what this checks is the recipe's wiring, and the other recipes
+  # already cover the platforms.
+  recipe-nextjs:
+    name: recipe (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/frameworks/nextjs/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix examples/frameworks/nextjs
+      # Builds the library the scenario imports; the recipe's own typecheck
+      # runs inside test:nextjs.
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build and test the Next.js recipe
+        run: npm run test:nextjs
+
   property-sweep:
     name: property sweep (varied seeds)
     if: github.event_name == 'schedule'

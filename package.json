@@ -17,7 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify:packaged": "node scripts/verify-packaged-install.mjs",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "test:nextjs": "npm run build --prefix examples/frameworks/nextjs && tsc -p examples/frameworks/nextjs/tsconfig.check.json && vitest run --config examples/frameworks/nextjs/vitest.config.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",

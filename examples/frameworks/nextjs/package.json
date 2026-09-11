@@ -1,0 +1,19 @@
+{
+  "name": "@masterplaycoding/eventlab-example-nextjs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Recipe: pointing EventLab at a Next.js route handler, through a real Next server.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "next build"
+  },
+  "dependencies": {
+    "next": "16.3.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0"
+  }
+}
