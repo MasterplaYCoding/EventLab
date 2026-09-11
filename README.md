@@ -8,7 +8,7 @@ into a test you can run in the runner you already have.
 
 > Everything documented below is implemented and tested on Linux, Windows and
 > macOS — including the console block further down, which is compared against
-> the library's own output on every CI run. Install it from source today; see
+> the library's own output on every CI run. Install it from npm; see
 > [Install](#install). Anything not documented below is not built; see
 > [Roadmap](#roadmap).
 
@@ -147,7 +147,8 @@ database is needed to run the default example.
 
 ## Running the examples
 
-All four examples live in this repository and run from its root:
+Every example lives in this repository and runs from its root (the Next.js
+recipe has its own install; see [docs/recipes.md](docs/recipes.md)):
 
 ```bash
 git clone https://github.com/MasterplaYCoding/EventLab.git
@@ -194,7 +195,7 @@ ends up in*.
 
 | What EventLab guarantees | Where that stops |
 |---|---|
-| The same seed and inputs produce the same plan: the same attempts, payloads, offsets and ordering constraints. | It does not make execution deterministic. Network latency, database interleavings and your application's scheduling still vary between runs. See [docs/decisions/001-determinism-boundary.md](docs/decisions/001-determinism-boundary.md). |
+| The same seed and inputs produce the same plan: the same attempts, payloads, offsets and ordering constraints — across releases, not only within one. Checked against plans written by the released 0.2.0, 0.2.1 and 0.3.0 packages; a planner change that alters a plan must bump `PLANNER_VERSION`, which saved-plan replay then refuses. | It does not make execution deterministic. Network latency, database interleavings and your application's scheduling still vary between runs. See [docs/decisions/001-determinism-boundary.md](docs/decisions/001-determinism-boundary.md). |
 | Every request your target receives corresponds to an attempt in the plan. There are no automatic retries and redirects are not followed. | It cannot account for retries your own HTTP client or proxy performs. |
 | A delivery timeout is reported as a timeout, with the elapsed time. | A timeout is **not** evidence the server did not commit the write. See [docs/decisions/002-timeouts-prove-nothing.md](docs/decisions/002-timeouts-prove-nothing.md). |
 | Reports never contain request bodies, and record request header *names* only — enforced by delivering a real signature, bearer token and card number and finding them in neither the JSON nor the formatted output. A response body is read up to the limit and then abandoned, so an endless one costs the limit rather than the request timeout. | Response body previews are captured (bounded, 64 KiB by default). **The request URL is recorded whole, query string included** — a provider that authenticates by query parameter puts that in the report. If your target echoes secrets, redact them in your own handler. Abandoning the body means the connection is not reused; that is the intended trade. |

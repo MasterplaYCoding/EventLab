@@ -1,0 +1,119 @@
+{
+  "plannerVersion": "2",
+  "scenario": "reordered and delayed",
+  "seed": 7,
+  "fixtureDigest": "sha256:c3fc3a32b17a2feb1fb528c85ee562e11f0772b14330d333547e96b8e4d8b62d",
+  "concurrency": 4,
+  "transforms": [
+    {
+      "kind": "shuffle",
+      "options": {}
+    },
+    {
+      "kind": "delay",
+      "options": {
+        "minMs": 10,
+        "maxMs": 90
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "attemptId": "evt_7#0",
+      "eventId": "evt_7",
+      "copyIndex": 0,
+      "order": 0,
+      "delayMs": 22,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_10#0",
+      "eventId": "evt_10",
+      "copyIndex": 0,
+      "order": 1,
+      "delayMs": 71,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_3#0",
+      "eventId": "evt_3",
+      "copyIndex": 0,
+      "order": 2,
+      "delayMs": 51,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_5#0",
+      "eventId": "evt_5",
+      "copyIndex": 0,
+      "order": 3,
+      "delayMs": 25,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_1#0",
+      "eventId": "evt_1",
+      "copyIndex": 0,
+      "order": 4,
+      "delayMs": 39,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_8#0",
+      "eventId": "evt_8",
+      "copyIndex": 0,
+      "order": 5,
+      "delayMs": 33,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_2#0",
+      "eventId": "evt_2",
+      "copyIndex": 0,
+      "order": 6,
+      "delayMs": 53,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_4#0",
+      "eventId": "evt_4",
+      "copyIndex": 0,
+      "order": 7,
+      "delayMs": 34,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_6#0",
+      "eventId": "evt_6",
+      "copyIndex": 0,
+      "order": 8,
+      "delayMs": 89,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_9#0",
+      "eventId": "evt_9",
+      "copyIndex": 0,
+      "order": 9,
+      "delayMs": 30,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_11#0",
+      "eventId": "evt_11",
+      "copyIndex": 0,
+      "order": 10,
+      "delayMs": 81,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_0#0",
+      "eventId": "evt_0",
+      "copyIndex": 0,
+      "order": 11,
+      "delayMs": 25,
+      "phase": 0
+    }
+  ],
+  "barriers": []
+}

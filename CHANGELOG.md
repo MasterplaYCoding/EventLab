@@ -33,6 +33,23 @@ between minor versions; each change will be listed here with a migration note.
 
 ### Changed
 
+- **Golden plans from the released packages.** The README's first
+  guarantee - the same seed and inputs produce the same plan - was tested
+  only within a build: the planner's property tests prove determinism and
+  valid shuffles, and would all pass if a refactor changed *which* valid
+  shuffle a seed produces. PLANNER_VERSION would stay put, and every seed in
+  every report ("rebuild with seed X and planner version Y") would quietly
+  mean a different plan. `tools/golden-plans` installs a released
+  `@masterplaycoding/eventlab` from npm and writes five plans - every
+  transform, both orders of the order-sensitive ones, a seed near the top of
+  the range, and phases with a barrier - into
+  `packages/core/test/golden-plans/<version>/`; `goldenPlans.test.ts`
+  requires this build to serialise the same inputs to the same text while
+  the planner version matches, and requires `parsePlan` to refuse them once
+  it does not. 0.2.0, 0.2.1 and 0.3.0 planned identically. Confirmed: running
+  Fisher-Yates forwards instead of backwards - still a correct shuffle -
+  fails the three golden tests and passes the other 125.
+
 - **The public API is a committed file.** `packages/core/etc/eventlab.api.md`
   and `packages/cli/etc/eventlab-cli.api.md` are API Extractor reports of
   every exported signature, and `npm run api:check` - in CI and before every

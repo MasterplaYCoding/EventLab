@@ -1,0 +1,9 @@
+{
+  "name": "eventlab-golden-plans",
+  "private": true,
+  "type": "module",
+  "description": "Writes packages/core/test/golden-plans/ with a released @masterplaycoding/eventlab from npm.",
+  "scripts": {
+    "generate": "node generate.mjs"
+  }
+}

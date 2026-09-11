@@ -1,0 +1,75 @@
+{
+  "plannerVersion": "2",
+  "scenario": "refund after settlement",
+  "seed": 20260910,
+  "fixtureDigest": "sha256:603b33f349de1c83a713a456dfad48ede8937944e89573fc8ba1461d6cc735ab",
+  "concurrency": 4,
+  "transforms": [
+    {
+      "kind": "duplicate",
+      "options": {
+        "copies": 2
+      }
+    },
+    {
+      "kind": "shuffle",
+      "options": {}
+    },
+    {
+      "kind": "delay",
+      "options": {
+        "minMs": 5,
+        "maxMs": 50
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "attemptId": "evt_payment_1#0",
+      "eventId": "evt_payment_1",
+      "copyIndex": 0,
+      "order": 0,
+      "delayMs": 0,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_charge_1#0",
+      "eventId": "evt_charge_1",
+      "copyIndex": 0,
+      "order": 1,
+      "delayMs": 0,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_charge_1#1",
+      "eventId": "evt_charge_1",
+      "copyIndex": 1,
+      "order": 2,
+      "delayMs": 0,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_payment_1#1",
+      "eventId": "evt_payment_1",
+      "copyIndex": 1,
+      "order": 3,
+      "delayMs": 0,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_payment_2#0",
+      "eventId": "evt_payment_2",
+      "copyIndex": 0,
+      "order": 4,
+      "delayMs": 22,
+      "phase": 1
+    }
+  ],
+  "barriers": [
+    {
+      "name": "settled",
+      "afterPhase": 0,
+      "checkpoint": "settle"
+    }
+  ]
+}
