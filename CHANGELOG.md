@@ -5,7 +5,16 @@ All notable changes are recorded here. This project follows
 versioning. Until `1.0`, the public API and the report schema may change
 between minor versions; each change will be listed here with a migration note.
 
-## [Unreleased]
+## [0.4.0] - unreleased
+
+The date becomes real on the day it is tagged; see [RELEASING.md](RELEASING.md).
+
+The roadmap's 0.4 milestone - framework recipes for Express, Fastify, NestJS and
+Next.js, each a runnable test - and the machinery 1.0 will rest on: a committed
+API report, golden plans from every release, and a check that a report or plan
+shape cannot change without its version moving. The packages themselves change
+only in one declaration: the CLI's `USAGE` is typed `string` instead of its
+literal text.
 
 ### Added
 
