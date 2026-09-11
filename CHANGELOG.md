@@ -129,6 +129,31 @@ between minor versions; each change will be listed here with a migration note.
 
 ### Changed
 
+- **`REPORT_SCHEMA_VERSION` is `3`.** Reports gained `limits.teardownTimeoutMs`,
+  and `cleanup.status` can now be `"timed-out"`. That is the same kind of
+  change that moved it to `2` in `0.2.0`, and the constant's own
+  documentation tells consumers to branch on it — a promise that means
+  nothing if the shape can change underneath an unchanged number.
+
+  **Migration:** a consumer that checks `reportSchemaVersion` should accept
+  `"3"`. One that switches exhaustively on `cleanup.status` needs a
+  `"timed-out"` arm, and should treat it as a failure, as `passed` does.
+  Nothing was removed or renamed, so a schema-2 reader that ignores unknown
+  fields and values keeps working.
+
+  `PLANNER_VERSION` stays `2`: the plan did not change shape. `baseUrl`
+  becoming a function lives in `RunOptions`, not in the plan, so every saved
+  `0.2.x` plan replays unchanged.
+
+- **`eventlab report` checks the schema before rendering.** It never looked
+  at `reportSchemaVersion`; it checked only that `attempts` was an array.
+  It now renders schemas 2 and 3 and refuses anything else with exit 2 and
+  a message naming both versions. Newer schemas are refused rather than
+  rendered in part, because what a renderer skips is what it does not
+  recognise — the timeline itself spent `0.2.x` dropping `harnessError` and
+  `cleanup` that way (see *Fixed*). A report file containing `null` now says
+  it is not a report instead of surfacing a `TypeError`.
+
 - `resolveBaseUrl` is now async and returns a `Promise<URL>`. Internal; the
   exported surface is unchanged apart from `baseUrl` accepting a function,
   which is additive — every existing scenario passing a string is unaffected.

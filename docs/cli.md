@@ -95,6 +95,12 @@ eventlab report report.json --html timeline.html
 Renders a report you already have. Useful for a CI job that saved JSON and a
 human who wants to look at it later.
 
+It reads `reportSchemaVersion` first. Schemas 2 and 3 render — 2 is what
+`0.2.x` wrote, and 3 only added fields to it. Anything else exits `2` without
+writing a file: a report from a *newer* EventLab is refused rather than
+rendered in part, because the part this build would skip is whatever it has
+never heard of, and that is usually the part worth seeing.
+
 ## Exit codes
 
 | Code | Meaning |

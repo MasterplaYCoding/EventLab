@@ -215,4 +215,5 @@ input. `isHarnessError(value)` is a realm-safe type guard.
 
 - `PLANNER_VERSION` — a saved plan records this; replay refuses a mismatch.
 - `REPORT_SCHEMA_VERSION` — branch on this when parsing reports, not on the
-  package version.
+  package version. Currently `3`; `3` added `limits.teardownTimeoutMs` and the
+  `timed-out` cleanup status to `2`.

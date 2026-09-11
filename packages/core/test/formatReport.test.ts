@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { assertRunPassed, formatReport } from "../src/report/format.js";
 import { createPlan } from "../src/plan/createPlan.js";
+import { REPORT_SCHEMA_VERSION } from "../src/version.js";
 import type {
   AssertionReport,
   AttemptReport,
@@ -31,7 +32,7 @@ const ok = (index: number, status = 200): AttemptReport =>
 
 function report(overrides: Partial<RunReport> = {}): RunReport {
   return {
-    reportSchemaVersion: "2",
+    reportSchemaVersion: REPORT_SCHEMA_VERSION,
     plannerVersion: "2",
     scenario: "example",
     seed: 20260908,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { renderHtml } from "../src/html.js";
-import { createPlan } from "@masterplaycoding/eventlab";
+import { createPlan, REPORT_SCHEMA_VERSION } from "@masterplaycoding/eventlab";
 import type {
   AssertionReport,
   AttemptReport,
@@ -51,7 +51,7 @@ function attempt(overrides: Partial<AttemptReport> = {}): AttemptReport {
 
 function report(overrides: Partial<RunReport> = {}): RunReport {
   return {
-    reportSchemaVersion: "2",
+    reportSchemaVersion: REPORT_SCHEMA_VERSION,
     plannerVersion: "2",
     scenario: "html",
     seed: 1,

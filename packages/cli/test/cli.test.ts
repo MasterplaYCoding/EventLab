@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+
+import { REPORT_SCHEMA_VERSION } from "@masterplaycoding/eventlab";
 
 import { EXIT_FAILED, EXIT_HARNESS, EXIT_OK, run } from "../src/index.js";
 
@@ -220,6 +222,81 @@ describe("eventlab report", () => {
     err.length = 0;
     expect(await run(["report", json], streams)).toBe(EXIT_HARNESS);
     expect(stderr()).toContain("needs --html");
+  });
+
+  /** A real report from this build, rewritten by `edit` and saved again. */
+  async function savedReport(edit: (report: Record<string, unknown>) => void): Promise<string> {
+    const json = join(workspace, "report.json");
+    await run(["run", writeScenario({ passes: true }), "--json", json], streams);
+    const report = JSON.parse(readFileSync(json, "utf8")) as Record<string, unknown>;
+    edit(report);
+    writeFileSync(json, JSON.stringify(report), "utf8");
+    out.length = 0;
+    err.length = 0;
+    return json;
+  }
+
+  it("refuses a report from a newer schema rather than rendering part of it", async () => {
+    // A newer report can carry a status this build has never heard of, and
+    // rendering what it does recognise would drop that without a word.
+    const json = await savedReport((report) => {
+      report.reportSchemaVersion = String(Number(REPORT_SCHEMA_VERSION) + 1);
+    });
+    const html = join(workspace, "out.html");
+
+    expect(await run(["report", json, "--html", html], streams)).toBe(EXIT_HARNESS);
+    expect(stderr()).toContain(`report schema ${Number(REPORT_SCHEMA_VERSION) + 1}`);
+    expect(stderr()).toContain("newer than this build understands");
+    expect(stderr()).toContain("Upgrade @masterplaycoding/eventlab-cli");
+    expect(existsSync(html)).toBe(false);
+  });
+
+  it("still renders a schema-2 report, the shape 0.2.x wrote", async () => {
+    // Schema 3 only added fields. A CI job that saved JSON with 0.2.1 must not
+    // lose the ability to look at it because the CLI was upgraded.
+    const json = await savedReport((report) => {
+      report.reportSchemaVersion = "2";
+      delete (report.limits as Record<string, unknown>).teardownTimeoutMs;
+    });
+    const html = join(workspace, "out.html");
+
+    expect(await run(["report", json, "--html", html], streams)).toBe(EXIT_OK);
+    expect(readFileSync(html, "utf8")).toContain("cli scenario");
+  });
+
+  it("refuses schema 1, which predates barriers, and says what to do", async () => {
+    const json = await savedReport((report) => {
+      report.reportSchemaVersion = "1";
+    });
+
+    expect(await run(["report", json, "--html", join(workspace, "o.html")], streams)).toBe(
+      EXIT_HARNESS,
+    );
+    expect(stderr()).toContain("report schema 1");
+    expect(stderr()).toContain("Run the scenario again");
+  });
+
+  it("refuses a report with no schema version", async () => {
+    const json = await savedReport((report) => {
+      delete report.reportSchemaVersion;
+    });
+
+    expect(await run(["report", json, "--html", join(workspace, "o.html")], streams)).toBe(
+      EXIT_HARNESS,
+    );
+    expect(stderr()).toContain("has no reportSchemaVersion");
+  });
+
+  it("says a file is not a report instead of crashing on it", async () => {
+    // `null` used to reach `.attempts` and surface as a TypeError.
+    const json = join(workspace, "null.json");
+    writeFileSync(json, "null", "utf8");
+
+    expect(await run(["report", json, "--html", join(workspace, "o.html")], streams)).toBe(
+      EXIT_HARNESS,
+    );
+    expect(stderr()).toContain("is not an EventLab report");
+    expect(stderr()).not.toContain("Cannot read properties");
   });
 });
 

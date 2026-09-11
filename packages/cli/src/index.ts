@@ -5,6 +5,7 @@ import {
   assertFixturesMatch,
   formatReport,
   parsePlan,
+  REPORT_SCHEMA_VERSION,
   runPlan,
   type RunReport,
 } from "@masterplaycoding/eventlab";
@@ -134,14 +135,63 @@ async function commandReport(options: ParsedOptions, streams: Streams): Promise<
     return usageError(streams, "report needs --html <file>; there is nothing else to produce");
   }
 
-  const report = JSON.parse(await readFile(resolve(reportPath), "utf8")) as RunReport;
-  if (!Array.isArray(report.attempts)) {
+  const parsed = JSON.parse(await readFile(resolve(reportPath), "utf8")) as unknown;
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    !Array.isArray((parsed as Partial<RunReport>).attempts)
+  ) {
     return usageError(streams, `${reportPath} is not an EventLab report`);
+  }
+
+  const report = parsed as RunReport;
+  const refusal = unrenderableSchema(report.reportSchemaVersion);
+  if (refusal !== undefined) {
+    // Not a usage error: the arguments were fine, the file is the problem.
+    streams.err(`eventlab: ${reportPath} ${refusal}`);
+    return EXIT_HARNESS;
   }
 
   await writeFile(resolve(options.html), renderHtml(report), "utf8");
   streams.out(`wrote ${options.html}`);
   return EXIT_OK;
+}
+
+/**
+ * Report schemas the timeline can render: this build's own, and every older
+ * one whose shape it still reads correctly.
+ *
+ * Schema 3 only added fields, so a schema-2 report from a 0.2.x CI job renders
+ * unchanged. Schema 1 predates `barriers`, which the timeline reads
+ * unconditionally.
+ *
+ * A *newer* schema is refused rather than rendered on a best-effort basis,
+ * because best effort is silent about exactly the part that matters: a report
+ * can carry a status this build has never heard of, and a renderer that skips
+ * what it does not recognise would drop it without a word. The timeline did
+ * precisely that with `harnessError` and `cleanup` until 0.3.0.
+ */
+const RENDERABLE_REPORT_SCHEMAS: readonly string[] = ["2", REPORT_SCHEMA_VERSION];
+
+/** Why a report cannot be rendered, or undefined when it can. */
+function unrenderableSchema(version: unknown): string | undefined {
+  if (typeof version === "string" && RENDERABLE_REPORT_SCHEMAS.includes(version)) {
+    return undefined;
+  }
+  const supported = `this build renders report schemas ${RENDERABLE_REPORT_SCHEMAS.join(" and ")}`;
+  if (typeof version !== "string") {
+    return `has no reportSchemaVersion; ${supported}`;
+  }
+  if (/^\d+$/.test(version) && Number(version) > Number(REPORT_SCHEMA_VERSION)) {
+    return (
+      `was written with report schema ${version}, which is newer than this build ` +
+      `understands; ${supported}. Upgrade @masterplaycoding/eventlab-cli to render it.`
+    );
+  }
+  return (
+    `was written with report schema ${version}; ${supported}. ` +
+    `Run the scenario again with this release to get a report it can render.`
+  );
 }
 
 /** Writes any requested artifacts, prints the report, and picks an exit code. */

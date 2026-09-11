@@ -8,5 +8,7 @@ export const PLANNER_VERSION = "2";
 /**
  * Version of the JSON run report schema. Consumers that parse reports should
  * branch on this value rather than on the toolkit version.
+ *
+ * `3` added `limits.teardownTimeoutMs` and the `timed-out` cleanup status.
  */
-export const REPORT_SCHEMA_VERSION = "2";
+export const REPORT_SCHEMA_VERSION = "3";
