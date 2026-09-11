@@ -5,6 +5,8 @@ All notable changes are recorded here. This project follows
 versioning. Until `1.0`, the public API and the report schema may change
 between minor versions; each change will be listed here with a migration note.
 
+## [Unreleased]
+
 ## [0.3.0] - 2026-09-11
 
 Restarting the application under test mid-scenario, bounded teardown, and
