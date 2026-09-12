@@ -38,7 +38,7 @@ const read = (version: string, name: string) =>
 describe("golden plans from released versions", () => {
   it("cover every release since saved plans existed, and every scenario", () => {
     // A directory that silently lost files would make the loop below vacuous.
-    for (const release of ["0.2.0", "0.2.1", "0.3.0"]) expect(versions).toContain(release);
+    for (const release of ["0.2.0", "0.2.1", "0.3.0", "0.4.0"]) expect(versions).toContain(release);
     for (const version of versions) {
       const names = readdirSync(join(root, version)).map((file) => file.replace(/\.json$/, "")).sort();
       expect(names, `scenarios in ${version}`).toEqual([...current.keys()].sort());
