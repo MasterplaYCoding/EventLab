@@ -211,7 +211,7 @@ ends up in*.
 | `0.1` | Planner, transforms, HTTP runner, assertions, JSON reports, saved plans, report formatting, both examples | **implemented** |
 | `0.2` | Explicit barriers, a barrier-only example, durable inbox/outbox crash recovery, and the `eventlab` CLI with an HTML timeline | **released** |
 | `0.3` | Restarting the application mid-scenario, and an example that needs it | **released** |
-| `0.4` | Recipes for Express, Fastify, NestJS and Next.js, each a runnable test | **implemented**, release pending |
+| `0.4` | Recipes for Express, Fastify, NestJS and Next.js, each a runnable test | **released** |
 | `1.0` | Stable API and report schema, compatibility policy, complete recipes | **in progress** — the policy, API-report checking, versioned-shape checks, golden plans and four framework recipes are implemented; 1.0 itself is the promise that the API stops changing |
 
 `0.4` also listed benchmarks. They were dropped in favour of **ceiling
