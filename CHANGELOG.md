@@ -5,6 +5,8 @@ All notable changes are recorded here. This project follows
 versioning. Until `1.0`, the public API and the report schema may change
 between minor versions; each change will be listed here with a migration note.
 
+## [Unreleased]
+
 ## [0.4.1] - 2026-09-14
 
 A patch: `parsePlan` now refuses malformed saved plans it used to accept, one of

@@ -1,0 +1,413 @@
+{
+  "plannerVersion": "2",
+  "scenario": "a seed near the top of the range",
+  "seed": 2147483646,
+  "fixtureDigest": "sha256:c3fc3a32b17a2feb1fb528c85ee562e11f0772b14330d333547e96b8e4d8b62d",
+  "concurrency": 3,
+  "transforms": [
+    {
+      "kind": "duplicate",
+      "options": {
+        "copies": 4
+      }
+    },
+    {
+      "kind": "shuffle",
+      "options": {}
+    },
+    {
+      "kind": "delay",
+      "options": {
+        "minMs": 1,
+        "maxMs": 1000
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "attemptId": "evt_0#0",
+      "eventId": "evt_0",
+      "copyIndex": 0,
+      "order": 0,
+      "delayMs": 132,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_5#0",
+      "eventId": "evt_5",
+      "copyIndex": 0,
+      "order": 1,
+      "delayMs": 349,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_10#0",
+      "eventId": "evt_10",
+      "copyIndex": 0,
+      "order": 2,
+      "delayMs": 940,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_10#1",
+      "eventId": "evt_10",
+      "copyIndex": 1,
+      "order": 3,
+      "delayMs": 430,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_5#1",
+      "eventId": "evt_5",
+      "copyIndex": 1,
+      "order": 4,
+      "delayMs": 10,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_6#0",
+      "eventId": "evt_6",
+      "copyIndex": 0,
+      "order": 5,
+      "delayMs": 970,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_8#0",
+      "eventId": "evt_8",
+      "copyIndex": 0,
+      "order": 6,
+      "delayMs": 741,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_9#0",
+      "eventId": "evt_9",
+      "copyIndex": 0,
+      "order": 7,
+      "delayMs": 641,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_7#0",
+      "eventId": "evt_7",
+      "copyIndex": 0,
+      "order": 8,
+      "delayMs": 338,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_4#0",
+      "eventId": "evt_4",
+      "copyIndex": 0,
+      "order": 9,
+      "delayMs": 525,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_5#2",
+      "eventId": "evt_5",
+      "copyIndex": 2,
+      "order": 10,
+      "delayMs": 821,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_7#1",
+      "eventId": "evt_7",
+      "copyIndex": 1,
+      "order": 11,
+      "delayMs": 266,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_9#1",
+      "eventId": "evt_9",
+      "copyIndex": 1,
+      "order": 12,
+      "delayMs": 408,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_2#0",
+      "eventId": "evt_2",
+      "copyIndex": 0,
+      "order": 13,
+      "delayMs": 805,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_10#2",
+      "eventId": "evt_10",
+      "copyIndex": 2,
+      "order": 14,
+      "delayMs": 630,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_10#3",
+      "eventId": "evt_10",
+      "copyIndex": 3,
+      "order": 15,
+      "delayMs": 477,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_6#1",
+      "eventId": "evt_6",
+      "copyIndex": 1,
+      "order": 16,
+      "delayMs": 142,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_0#1",
+      "eventId": "evt_0",
+      "copyIndex": 1,
+      "order": 17,
+      "delayMs": 551,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_7#2",
+      "eventId": "evt_7",
+      "copyIndex": 2,
+      "order": 18,
+      "delayMs": 176,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_9#2",
+      "eventId": "evt_9",
+      "copyIndex": 2,
+      "order": 19,
+      "delayMs": 447,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_4#1",
+      "eventId": "evt_4",
+      "copyIndex": 1,
+      "order": 20,
+      "delayMs": 538,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_1#0",
+      "eventId": "evt_1",
+      "copyIndex": 0,
+      "order": 21,
+      "delayMs": 976,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_6#2",
+      "eventId": "evt_6",
+      "copyIndex": 2,
+      "order": 22,
+      "delayMs": 470,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_7#3",
+      "eventId": "evt_7",
+      "copyIndex": 3,
+      "order": 23,
+      "delayMs": 938,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_8#1",
+      "eventId": "evt_8",
+      "copyIndex": 1,
+      "order": 24,
+      "delayMs": 479,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_1#1",
+      "eventId": "evt_1",
+      "copyIndex": 1,
+      "order": 25,
+      "delayMs": 311,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_8#2",
+      "eventId": "evt_8",
+      "copyIndex": 2,
+      "order": 26,
+      "delayMs": 405,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_3#0",
+      "eventId": "evt_3",
+      "copyIndex": 0,
+      "order": 27,
+      "delayMs": 182,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_1#2",
+      "eventId": "evt_1",
+      "copyIndex": 2,
+      "order": 28,
+      "delayMs": 115,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_5#3",
+      "eventId": "evt_5",
+      "copyIndex": 3,
+      "order": 29,
+      "delayMs": 206,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_11#0",
+      "eventId": "evt_11",
+      "copyIndex": 0,
+      "order": 30,
+      "delayMs": 449,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_0#2",
+      "eventId": "evt_0",
+      "copyIndex": 2,
+      "order": 31,
+      "delayMs": 685,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_0#3",
+      "eventId": "evt_0",
+      "copyIndex": 3,
+      "order": 32,
+      "delayMs": 533,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_2#1",
+      "eventId": "evt_2",
+      "copyIndex": 1,
+      "order": 33,
+      "delayMs": 129,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_3#1",
+      "eventId": "evt_3",
+      "copyIndex": 1,
+      "order": 34,
+      "delayMs": 327,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_3#2",
+      "eventId": "evt_3",
+      "copyIndex": 2,
+      "order": 35,
+      "delayMs": 869,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_3#3",
+      "eventId": "evt_3",
+      "copyIndex": 3,
+      "order": 36,
+      "delayMs": 222,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_2#2",
+      "eventId": "evt_2",
+      "copyIndex": 2,
+      "order": 37,
+      "delayMs": 394,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_4#2",
+      "eventId": "evt_4",
+      "copyIndex": 2,
+      "order": 38,
+      "delayMs": 204,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_1#3",
+      "eventId": "evt_1",
+      "copyIndex": 3,
+      "order": 39,
+      "delayMs": 54,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_9#3",
+      "eventId": "evt_9",
+      "copyIndex": 3,
+      "order": 40,
+      "delayMs": 815,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_8#3",
+      "eventId": "evt_8",
+      "copyIndex": 3,
+      "order": 41,
+      "delayMs": 117,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_2#3",
+      "eventId": "evt_2",
+      "copyIndex": 3,
+      "order": 42,
+      "delayMs": 514,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_6#3",
+      "eventId": "evt_6",
+      "copyIndex": 3,
+      "order": 43,
+      "delayMs": 618,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_11#1",
+      "eventId": "evt_11",
+      "copyIndex": 1,
+      "order": 44,
+      "delayMs": 762,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_11#2",
+      "eventId": "evt_11",
+      "copyIndex": 2,
+      "order": 45,
+      "delayMs": 637,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_4#3",
+      "eventId": "evt_4",
+      "copyIndex": 3,
+      "order": 46,
+      "delayMs": 29,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_11#3",
+      "eventId": "evt_11",
+      "copyIndex": 3,
+      "order": 47,
+      "delayMs": 913,
+      "phase": 0
+    }
+  ],
+  "barriers": []
+}
