@@ -43,11 +43,39 @@ export function parsePlan(source: string): DeliveryPlan {
   if (typeof plan.seed !== "number" || !Number.isInteger(plan.seed)) {
     throw new HarnessError("InvalidPlan", "saved plan is missing an integer seed", "seed");
   }
-  if (typeof plan.concurrency !== "number" || plan.concurrency < 1) {
-    throw new HarnessError("InvalidPlan", "saved plan has an invalid concurrency", "concurrency");
+  // Integer, as createPlan requires. `>= 1` alone let 1.5 through, and
+  // `"concurrency": 1e999` - valid JSON that parses to Infinity - ran unbounded.
+  if (!Number.isInteger(plan.concurrency) || (plan.concurrency as number) < 1) {
+    throw new HarnessError(
+      "InvalidPlan",
+      "saved plan's concurrency must be a positive integer",
+      "concurrency",
+    );
   }
   if (!Array.isArray(plan.attempts) || plan.attempts.length === 0) {
     throw new HarnessError("InvalidPlan", "saved plan has no attempts", "attempts");
+  }
+  // Nothing executes these, but a report embeds the plan and a reader of it is
+  // told this is how the plan was built; a record that is not one is a plan
+  // that no longer explains itself.
+  if (!Array.isArray(plan.transforms)) {
+    throw new HarnessError("InvalidPlan", "saved plan's transforms must be an array", "transforms");
+  }
+  for (const [index, transform] of plan.transforms.entries()) {
+    if (
+      typeof transform !== "object" ||
+      transform === null ||
+      typeof transform.kind !== "string" ||
+      typeof transform.options !== "object" ||
+      transform.options === null ||
+      Array.isArray(transform.options)
+    ) {
+      throw new HarnessError(
+        "InvalidPlan",
+        "each transform must record a kind and an options object",
+        `transforms[${index}]`,
+      );
+    }
   }
 
   const attemptIds = new Set<string>();
@@ -67,18 +95,38 @@ export function parsePlan(source: string): DeliveryPlan {
     if (!Number.isInteger(attempt.delayMs) || attempt.delayMs < 0) {
       throw new HarnessError("InvalidPlan", "attempt delays must be non-negative integers", at);
     }
+    // The scheduler sorts on order and groups on phase. Neither was checked, so
+    // a string or fractional value was accepted and then compared as whatever
+    // JavaScript made of it.
+    for (const field of ["phase", "order", "copyIndex"] as const) {
+      const value: unknown = attempt[field];
+      if (!Number.isInteger(value) || (value as number) < 0) {
+        throw new HarnessError(
+          "InvalidPlan",
+          `attempt ${field} must be a non-negative integer`,
+          `${at}.${field}`,
+        );
+      }
+    }
   }
 
-  if (plan.barriers !== undefined) {
-    if (!Array.isArray(plan.barriers)) {
-      throw new HarnessError("InvalidPlan", "barriers must be an array", "barriers");
-    }
-    const phases = new Set(plan.attempts.map((attempt) => attempt.phase ?? 0));
+  // Required, not optional. Every planner-2 plan has it - an empty array when
+  // there are no barriers - and runPlan reads it unconditionally, so a plan
+  // without it passed here and then crashed replay with an "Unknown" harness
+  // error. Found by savedPlanFuzz.test.ts.
+  if (!Array.isArray(plan.barriers)) {
+    throw new HarnessError("InvalidPlan", "saved plan's barriers must be an array", "barriers");
+  }
+  {
+    const phases = new Set(plan.attempts.map((attempt) => attempt.phase));
     for (const [index, barrier] of plan.barriers.entries()) {
       const at = `barriers[${index}]`;
       requireString(barrier?.name, `${at}.name`);
       if (!Number.isInteger(barrier.afterPhase) || barrier.afterPhase < 0) {
         throw new HarnessError("InvalidPlan", "barrier afterPhase must be a phase index", at);
+      }
+      if (barrier.checkpoint !== undefined && typeof barrier.checkpoint !== "string") {
+        throw new HarnessError("InvalidPlan", "barrier checkpoint must be a hook name", at);
       }
       // A barrier separating nothing from nothing would silently do nothing at
       // run time, which is a saved plan that no longer means what it says.

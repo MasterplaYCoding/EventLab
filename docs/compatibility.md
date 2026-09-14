@@ -16,6 +16,7 @@ API. Each is versioned separately, because each changes for different reasons.
 | A plan saved by any release with the same planner version loads and replays. | The same test parses every golden plan. |
 | A change to what a plan contains bumps `PLANNER_VERSION`. | `versionedShapes.test.ts`: the plan types are compared with the shape recorded for the current planner version. |
 | A plan from a different planner version is **refused**, never regenerated — a regenerated plan is a different experiment. | `parsePlan`'s version check, and the golden test's expectation that other versions are refused. |
+| A malformed or hand-edited plan is refused with a `HarnessError`. A plan `parsePlan` accepts is one `createPlan` could have produced, and replays without crashing, delivering every attempt and honouring every barrier. | `savedPlanFuzz.test.ts`: every single-field mutation of a plan, plus a random search over combinations. |
 
 ## JSON reports
 

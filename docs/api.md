@@ -83,7 +83,11 @@ Writing your own is a supported extension point — see
 
 - `serializePlan(plan): string` — instructions only, never payloads.
 - `parsePlan(source): DeliveryPlan` — validates, and refuses a plan built by a
-  different planner version rather than regenerating it.
+  different planner version rather than regenerating it. A plan it accepts
+  holds every invariant `createPlan` guarantees — integer `concurrency`,
+  `phase`, `order` and `copyIndex`; `transforms` and `barriers` present — so
+  a malformed or hand-edited file is an `InvalidPlan` naming the field, not a
+  crash partway through replay.
 - `assertFixturesMatch(plan, events): void` — throws if the fixtures changed
   since the plan was saved. `runPlan` calls this for you; it is exported so you
   can check before doing expensive setup.

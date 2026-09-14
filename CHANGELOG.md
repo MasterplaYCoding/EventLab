@@ -7,6 +7,43 @@ between minor versions; each change will be listed here with a migration note.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A saved plan without `barriers` passed `parsePlan` and then crashed
+  replay.** `parsePlan` treated the field as optional; `runPlan` reads it
+  unconditionally, so a hand-edited or truncated plan was accepted and the
+  replay ended in an `Unknown` harness error - a crash, reported as one -
+  instead of a refusal naming the field. Every planner-2 plan has it, so it
+  is now required.
+
+- **`parsePlan` accepted plans `createPlan` could never have produced.** Its
+  documentation says it "checks it is safe to execute", but it did not check
+  several fields the runner relies on: `concurrency` only had to be `>= 1`,
+  so `1.5` passed and so did `1e999` - valid JSON for Infinity, which
+  `JSON.stringify` can never write and a hand-edited file easily can - and
+  ran unbounded; an attempt's `phase`, `order` and `copyIndex` were not
+  checked at all, though the scheduler groups and sorts on them; `transforms`
+  could be anything; and a barrier's `checkpoint` did not have to be a hook
+  name. Each is now held to what `createPlan` guarantees. The golden plans
+  from all four releases still parse, so no plan a release ever saved is
+  refused.
+
+### Added
+
+- **`savedPlanFuzz.test.ts`**, which found both of the above. It mutates a
+  valid plan - phases, a barrier with a checkpoint, several transforms - and
+  requires that anything `parsePlan` refuses is refused with a
+  `HarnessError`, that anything it accepts satisfies `createPlan`'s
+  invariants, and that replaying an accepted plan never ends in an `Unknown`
+  harness error and, when it runs cleanly, delivers every attempt and passes
+  every barrier. Two parts: a deterministic sweep of every single mutation -
+  each path in the plan, each edge value, each deletion - and a random search
+  over combinations. The sweep exists because the random search alone missed
+  a concurrency of `1.5` or Infinity in 2,000 runs: finding it needs one
+  field *and* one value, and CI runs 100. Each of the five new checks was
+  falsified by reverting it: the sweep fails for every one at CI's budget,
+  the random search for only two.
+
 ## [0.4.0] - 2026-09-12
 
 The roadmap's 0.4 milestone - framework recipes for Express, Fastify, NestJS and
