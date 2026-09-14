@@ -5,7 +5,13 @@ All notable changes are recorded here. This project follows
 versioning. Until `1.0`, the public API and the report schema may change
 between minor versions; each change will be listed here with a migration note.
 
-## [Unreleased]
+## [0.4.2] - unreleased
+
+The date becomes real on the day it is tagged; see [RELEASING.md](RELEASING.md).
+
+A patch: `eventlab report` now refuses a malformed report by naming the wrong
+fields, where it used to crash with an engine message or render `NaN` into the
+timeline. No API change.
 
 ### Fixed
 
