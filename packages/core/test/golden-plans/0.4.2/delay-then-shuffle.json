@@ -1,0 +1,221 @@
+{
+  "plannerVersion": "2",
+  "scenario": "delayed and reordered",
+  "seed": 7,
+  "fixtureDigest": "sha256:c3fc3a32b17a2feb1fb528c85ee562e11f0772b14330d333547e96b8e4d8b62d",
+  "concurrency": 4,
+  "transforms": [
+    {
+      "kind": "duplicate",
+      "options": {
+        "copies": 2
+      }
+    },
+    {
+      "kind": "delay",
+      "options": {
+        "minMs": 0,
+        "maxMs": 250
+      }
+    },
+    {
+      "kind": "shuffle",
+      "options": {}
+    }
+  ],
+  "attempts": [
+    {
+      "attemptId": "evt_1#0",
+      "eventId": "evt_1",
+      "copyIndex": 0,
+      "order": 0,
+      "delayMs": 245,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_2#0",
+      "eventId": "evt_2",
+      "copyIndex": 0,
+      "order": 1,
+      "delayMs": 101,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_2#1",
+      "eventId": "evt_2",
+      "copyIndex": 1,
+      "order": 2,
+      "delayMs": 130,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_10#0",
+      "eventId": "evt_10",
+      "copyIndex": 0,
+      "order": 3,
+      "delayMs": 220,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_3#0",
+      "eventId": "evt_3",
+      "copyIndex": 0,
+      "order": 4,
+      "delayMs": 60,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_11#0",
+      "eventId": "evt_11",
+      "copyIndex": 0,
+      "order": 5,
+      "delayMs": 47,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_10#1",
+      "eventId": "evt_10",
+      "copyIndex": 1,
+      "order": 6,
+      "delayMs": 62,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_6#0",
+      "eventId": "evt_6",
+      "copyIndex": 0,
+      "order": 7,
+      "delayMs": 130,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_11#1",
+      "eventId": "evt_11",
+      "copyIndex": 1,
+      "order": 8,
+      "delayMs": 36,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_9#0",
+      "eventId": "evt_9",
+      "copyIndex": 0,
+      "order": 9,
+      "delayMs": 245,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_0#0",
+      "eventId": "evt_0",
+      "copyIndex": 0,
+      "order": 10,
+      "delayMs": 2,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_9#1",
+      "eventId": "evt_9",
+      "copyIndex": 1,
+      "order": 11,
+      "delayMs": 74,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_5#0",
+      "eventId": "evt_5",
+      "copyIndex": 0,
+      "order": 12,
+      "delayMs": 39,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_4#0",
+      "eventId": "evt_4",
+      "copyIndex": 0,
+      "order": 13,
+      "delayMs": 138,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_7#0",
+      "eventId": "evt_7",
+      "copyIndex": 0,
+      "order": 14,
+      "delayMs": 49,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_8#0",
+      "eventId": "evt_8",
+      "copyIndex": 0,
+      "order": 15,
+      "delayMs": 73,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_5#1",
+      "eventId": "evt_5",
+      "copyIndex": 1,
+      "order": 16,
+      "delayMs": 64,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_4#1",
+      "eventId": "evt_4",
+      "copyIndex": 1,
+      "order": 17,
+      "delayMs": 183,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_8#1",
+      "eventId": "evt_8",
+      "copyIndex": 1,
+      "order": 18,
+      "delayMs": 134,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_0#1",
+      "eventId": "evt_0",
+      "copyIndex": 1,
+      "order": 19,
+      "delayMs": 15,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_7#1",
+      "eventId": "evt_7",
+      "copyIndex": 1,
+      "order": 20,
+      "delayMs": 92,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_6#1",
+      "eventId": "evt_6",
+      "copyIndex": 1,
+      "order": 21,
+      "delayMs": 191,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_3#1",
+      "eventId": "evt_3",
+      "copyIndex": 1,
+      "order": 22,
+      "delayMs": 117,
+      "phase": 0
+    },
+    {
+      "attemptId": "evt_1#1",
+      "eventId": "evt_1",
+      "copyIndex": 1,
+      "order": 23,
+      "delayMs": 175,
+      "phase": 0
+    }
+  ],
+  "barriers": []
+}
