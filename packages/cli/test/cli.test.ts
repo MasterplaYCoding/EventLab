@@ -298,6 +298,24 @@ describe("eventlab report", () => {
     expect(stderr()).toContain("is not an EventLab report");
     expect(stderr()).not.toContain("Cannot read properties");
   });
+
+  it("refuses a malformed report by naming the field, instead of rendering NaN into it", async () => {
+    // Found by reportSweep.test.ts. With the duration gone the timeline used to
+    // render with exit 0 and "NaN%" in its bar widths; with a scenario that is
+    // not a string, it crashed with an engine message naming no field.
+    const json = await savedReport((report) => {
+      delete (report.attempts as Record<string, unknown>[])[0]?.durationMs;
+      report.scenario = 42;
+    });
+    const html = join(workspace, "out.html");
+
+    expect(await run(["report", json, "--html", html], streams)).toBe(EXIT_HARNESS);
+    expect(stderr()).toContain("is not a report this build can render");
+    expect(stderr()).toContain("scenario must be a string");
+    expect(stderr()).toContain("attempts[0].durationMs must be a non-negative number");
+    expect(stderr()).not.toMatch(/Cannot read properties|is not a function/);
+    expect(existsSync(html)).toBe(false);
+  });
 });
 
 describe("argument handling", () => {

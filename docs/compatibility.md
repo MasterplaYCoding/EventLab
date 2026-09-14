@@ -24,6 +24,7 @@ API. Each is versioned separately, because each changes for different reasons.
 |---|---|
 | `reportSchemaVersion` changes whenever the shape of a report does — including fields added. Branch on it, not on the package version. | `versionedShapes.test.ts`: the report's types, read from the API report, are compared with the shape recorded for the current schema version. |
 | `eventlab report` renders the current schema and every older one it can read faithfully — today 2 and 3 — and refuses a newer one, rather than silently dropping what it does not recognise. | `cli.test.ts`. |
+| A malformed report of a known schema is refused with exit `2` and the wrong fields named; the timeline is never rendered with `NaN`, `undefined` or `[object Object]` in it, and the command never surfaces an engine error. | `reportSweep.test.ts`: every single-field change to a report with every section populated. |
 
 Consumers should expect new *values* in open-ended fields — a new
 `cleanup.status`, a new transport outcome — only with a schema bump, and should

@@ -11,6 +11,7 @@ import {
 } from "@masterplaycoding/eventlab";
 
 import { renderHtml } from "./html.js";
+import { reportProblems } from "./reportShape.js";
 import { loadScenario, ScenarioError } from "./scenario.js";
 
 export { renderHtml } from "./html.js";
@@ -152,6 +153,17 @@ async function commandReport(options: ParsedOptions, streams: Streams): Promise<
   if (refusal !== undefined) {
     // Not a usage error: the arguments were fine, the file is the problem.
     streams.err(`eventlab: ${reportPath} ${refusal}`);
+    return EXIT_HARNESS;
+  }
+
+  // After the schema check, so a newer report is told to upgrade rather than
+  // listed field by field. A malformed report is refused with the fields that
+  // are wrong - never rendered with "NaN" in it, never a TypeError.
+  const problems = reportProblems(parsed);
+  if (problems.length > 0) {
+    const shown = problems.slice(0, 5).join("; ");
+    const more = problems.length > 5 ? `; and ${problems.length - 5} more` : "";
+    streams.err(`eventlab: ${reportPath} is not a report this build can render: ${shown}${more}`);
     return EXIT_HARNESS;
   }
 

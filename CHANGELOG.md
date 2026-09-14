@@ -7,6 +7,35 @@ between minor versions; each change will be listed here with a migration note.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`eventlab report` crashed on, or rendered garbage from, a malformed
+  report.** It checked the schema version and that `attempts` was an array,
+  then handed everything else to the HTML renderer, which trusts every field.
+  A report whose `scenario`, `attemptId` or outcome `kind` was not a string -
+  or whose attempt or outcome was `null` - exited `2` with a JavaScript engine
+  message such as "Cannot read properties of undefined (reading 'replace')",
+  naming nothing the reader could find in their file. Worse, a missing
+  duration, seed or status rendered the timeline with exit `0` and `NaN`,
+  `undefined`, `Infinity` or `[object Object]` in it: a success, reporting
+  values that were never in the file. Reports are exactly the files that
+  travel - saved by CI, attached to issues, edited by hand - so they are
+  untrusted input like saved plans. The command now checks every field the
+  timeline reads and refuses a malformed report with exit `2` and the fields
+  named: `attempts[0].durationMs must be a non-negative number`. The check is
+  internal to the CLI; the public API is unchanged.
+
+### Added
+
+- **`reportSweep.test.ts`**, which found the above: a real report with every
+  section populated - a barrier, a failing assertion, a failed delivery, a
+  harness error and a failed teardown - put through every single-field change,
+  fourteen edge values and a deletion each, about 1,450 cases. Before the fix
+  it reported 118 distinct findings. Falsified three ways: skipping the check
+  brings back all 118; dropping only the `durationMs` rule fails exactly the
+  six `durationMs` cases; dropping only the outcome `kind` rule fails exactly
+  the six outcome cases.
+
 ## [0.4.1] - 2026-09-14
 
 A patch: `parsePlan` now refuses malformed saved plans it used to accept, one of

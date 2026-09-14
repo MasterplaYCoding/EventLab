@@ -101,6 +101,12 @@ writing a file: a report from a *newer* EventLab is refused rather than
 rendered in part, because the part this build would skip is whatever it has
 never heard of, and that is usually the part worth seeing.
 
+A report of a known schema whose fields are wrong — a missing duration, a
+scenario that is not a string, an outcome of an unknown kind, as a hand edit or
+a truncated upload produces — also exits `2` without writing a file, and the
+message names the fields: `attempts[0].durationMs must be a non-negative
+number`. It is never rendered with `NaN` or `undefined` in it.
+
 ## Exit codes
 
 | Code | Meaning |
